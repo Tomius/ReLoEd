@@ -18,38 +18,40 @@ uniform int Terrain_max_height;
 float M_PI = 3.14159265359;
 const float morph_end = 0.95, morph_start = 0.8;
 
-float Terrain_radius = Terrain_uTexSize.x / 2 / M_PI;
+float Terrain_radius = Terrain_uTexSize.x / 2;
 float Terrain_cam_height = length(Terrain_uCamPos) - Terrain_radius;
 
-float sqr(float x) {
-  return x*x;
-}
+#define kPosX 0
+#define kNegX 1
+#define kPosY 2
+#define kNegY 3
+#define kPosZ 4
+#define kNegZ 5
 
-#define kFront 0
-#define kBack 1
-#define kRight 2
-#define kLeft 3
-#define kTop 4
-#define kBottom 5
-const float kTexSize = 262144;
+float sqr(float x) {
+  return x * x;
+}
 
 vec3 Cubify(vec3 p) {
   return vec3(
-    p.x * sqrt(1 - p.y*p.y/2 - p.z*p.z/2 + p.y*p.y*p.z*p.z/3),
-    p.y * sqrt(1 - p.z*p.z/2 - p.x*p.x/2 + p.z*p.z*p.x*p.x/3),
-    p.z * sqrt(1 - p.x*p.x/2 - p.y*p.y/2 + p.x*p.x*p.y*p.y/3)
+    p.x * sqrt(1 - sqr(p.y)/2 - sqr(p.z)/2 + sqr(p.y*p.z)/3),
+    p.y * sqrt(1 - sqr(p.z)/2 - sqr(p.x)/2 + sqr(p.z*p.x)/3),
+    p.z * sqrt(1 - sqr(p.x)/2 - sqr(p.y)/2 + sqr(p.x*p.y)/3)
   );
 }
 
-vec3 Terrain_worldPos(vec3 p /*model_pos*/) {
-  p = (p - kTexSize/2) / (kTexSize/2);
-  if (Terrain_uFace%2 == 0) p.y = -p.y;
-  switch (Terrain_uFace / 2) {
-    case kFront/2: p = p.yzx; break;
-    case kRight/2: p = p.zxy; break;
-    case kTop/2:   p = p.xyz; break;
+vec3 Terrain_worldPos(vec3 pos) {
+  float height = pos.y; pos.y = 0;
+  pos = (pos - Terrain_uTexSize.x/2) / (Terrain_uTexSize.x/2);
+  switch (Terrain_uFace) {
+    case kPosX: pos = vec3(+pos.z, +pos.x, +pos.y); break;
+    case kNegX: pos = vec3(+pos.z, +pos.x, -pos.y); break;
+    case kPosY: pos = vec3(+pos.x, +pos.y, +pos.z); break;
+    case kNegY: pos = vec3(+pos.x, -pos.y, +pos.z); break;
+    case kPosZ: pos = vec3(+pos.y, +pos.z, +pos.x); break;
+    case kNegZ: pos = vec3(-pos.y, +pos.z, +pos.x); break;
   }
-  return kTexSize * Cubify(p);
+  return (Terrain_radius + height) * Cubify(pos);
 }
 
 bool Terrain_isValid(vec3 m_pos) {
@@ -81,7 +83,7 @@ vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal) {
   vec2 pos = Terrain_nodeLocal2Global(m_pos, offset, scale);
   int iteration_count = 0;
 
-  /*float dist = Terrain_estimateDistance(pos);
+  float dist = Terrain_estimateDistance(pos);
   float next_level_size = pow(2, level+1)
                           * Terrain_uLodLevelDistanceMultiplier
                           * Terrain_uNodeDimension;
@@ -108,7 +110,7 @@ vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal) {
     morphed_pos = Terrain_morphVertex(morphed_pos * 0.5, morph);
     pos = Terrain_nodeLocal2Global(morphed_pos, offset, scale);
     dist = Terrain_estimateDistance(pos);
-  }*/
+  }
 
   float height = 0;
   m_normal = vec3(0, 1, 0);

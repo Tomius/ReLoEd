@@ -55,9 +55,9 @@ void CdlodTerrain::render(Camera const& cam) {
 
   for (int face = 0; face < 6; ++face) {
     if (face % 2 == 0) {
-      gl::FrontFace(gl::kCcw);
-    } else {
       gl::FrontFace(gl::kCw);
+    } else {
+      gl::FrontFace(gl::kCcw);
     }
     mesh_.clearRenderList();
     gl::Uniform<int>(*program_, "Terrain_uFace") = face;

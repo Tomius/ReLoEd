@@ -27,13 +27,11 @@ class CdlodQuadTreeNode {
                    QuadGridMesh& grid_mesh);
 
  private:
-  using BBox = SpherizedAABBSat<GlobalHeightMap::tex_w, GlobalHeightMap::tex_h>;
-
   double x_, z_;
   CubeFace face_;
   int level_;
 
-  BBox bbox_;
+  SpherizedAABB bbox_;
   std::unique_ptr<CdlodQuadTreeNode> children_[4];
   int last_used_ = 0;
 

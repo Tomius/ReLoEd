@@ -3,14 +3,18 @@
 #include <algorithm>
 #include "./cdlod_quad_tree_node.h"
 #include "../misc.h"
+#include "../collision/cube2sphere.h"
 
 namespace engine {
 
 CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z,
                                      CubeFace face, int level)
-    : x_(x), z_(z), face_(face), level_(level)
-    , bbox_{{x-size()/2, 0, z-size()/2},
-            {x+size()/2, GlobalHeightMap::max_height, z+size()/2}} {}
+    : x_(x), z_(z), face_(face), level_(level) {
+  bbox_ = SpherizedAABB{BoundingBox{
+    {x-size()/2, 0, z-size()/2},
+    {x+size()/2, GlobalHeightMap::max_height, z+size()/2}
+  }, face, GlobalHeightMap::tex_w};
+}
 
 void CdlodQuadTreeNode::initChild(int i) {
   assert (0 <= i && i <= 3);
@@ -31,8 +35,8 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
                                const Frustum& frustum,
                                QuadGridMesh& grid_mesh) {
   float lod_range = GlobalHeightMap::lod_level_distance_multiplier * size();
-  grid_mesh.addToRenderList(x_, z_, scale(), level_);
-  return;
+  // grid_mesh.addToRenderList(x_, z_, scale(), level_);
+  // return;
 
   if (!bbox_.collidesWithFrustum(frustum)) { return; }
 

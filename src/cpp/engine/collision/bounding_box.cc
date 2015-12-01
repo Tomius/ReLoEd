@@ -17,6 +17,7 @@ bool BoundingBox::collidesWithSphere(const Sphere& sphere) const {
 }
 
 bool BoundingBox::collidesWithFrustum(const Frustum& frustum) const {
+  return true;
   glm::dvec3 center = this->center();
   glm::dvec3 extent = this->extent();
 
