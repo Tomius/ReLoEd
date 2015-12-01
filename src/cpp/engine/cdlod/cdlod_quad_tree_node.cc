@@ -32,8 +32,8 @@ void CdlodQuadTreeNode::initChild(int i) {
 }
 
 void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
-                               const Frustum& frustum,
-                               QuadGridMesh& grid_mesh) {
+                                    const Frustum& frustum,
+                                    QuadGridMesh& grid_mesh) {
   if (!bbox_.collidesWithFrustum(frustum)) { return; }
 
   last_used_ = 0;
