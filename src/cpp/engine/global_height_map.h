@@ -26,7 +26,7 @@ namespace GlobalHeightMap {
   // The size of sphere for a CDLOD level is node size * this
   // It should be at least 2, but making it bigger makes distant
   // parts of the terrain appear with more detail.
-  static constexpr double lod_level_distance_multiplier = 2.0;
+  static constexpr double lod_level_distance_multiplier = 1.0;
   static_assert(1 <= lod_level_distance_multiplier, "");
 
   static constexpr double texture_level_distance_multiplier = 4.0;
@@ -41,14 +41,14 @@ namespace GlobalHeightMap {
   static constexpr long geom_div = geom_div_base - level_offset;
 
   // The resolution of the heightmap
-  static constexpr long tex_w = 262144/4, tex_h = 262144/4;
+  static constexpr long tex_size = 65536;
 
   // The radius of the sphere made of the heightmap
-  static constexpr double sphere_radius = tex_w / 2;
+  static constexpr double sphere_radius = tex_size / 2;
 
-  static constexpr int mt_everest_height = 8848 * (sphere_radius / 6371000);
-  static constexpr int height_scale = 5;
-  static constexpr int max_height = height_scale * mt_everest_height;
+  static constexpr double mt_everest_height = 8848 * (sphere_radius / 6371000);
+  static constexpr double height_scale = 0.1;
+  static constexpr double max_height = height_scale * mt_everest_height;
 
   // statistics
   extern size_t geom_nodes_count, texture_nodes_count, gpu_mem_usage;

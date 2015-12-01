@@ -18,7 +18,8 @@ Scattering::Scattering(engine::GameObject* parent)
   gl::UniformSampler(prog_, "uTex").set(0);
   gl::UniformSampler(prog_, "uDepthTex").set(1);
   gl::Uniform<glm::ivec2>(prog_, "uTexSize") =
-    glm::ivec2(engine::GlobalHeightMap::tex_w, engine::GlobalHeightMap::tex_h);
+    glm::ivec2(engine::GlobalHeightMap::tex_size,
+               engine::GlobalHeightMap::tex_size);
   gl::Uniform<float>(prog_, "uRadius") =
     engine::GlobalHeightMap::sphere_radius;
   (prog_ | "aPosition").bindLocation(rect_.kPosition);

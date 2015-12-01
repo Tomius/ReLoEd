@@ -9,12 +9,12 @@ namespace engine {
 
 CdlodTerrain::CdlodTerrain(engine::ShaderManager* manager)
     : faces_{
-        {GlobalHeightMap::tex_w, GlobalHeightMap::tex_h, CubeFace::kPosX},
-        {GlobalHeightMap::tex_w, GlobalHeightMap::tex_h, CubeFace::kNegX},
-        {GlobalHeightMap::tex_w, GlobalHeightMap::tex_h, CubeFace::kPosY},
-        {GlobalHeightMap::tex_w, GlobalHeightMap::tex_h, CubeFace::kNegY},
-        {GlobalHeightMap::tex_w, GlobalHeightMap::tex_h, CubeFace::kPosZ},
-        {GlobalHeightMap::tex_w, GlobalHeightMap::tex_h, CubeFace::kNegZ}
+        {GlobalHeightMap::tex_size, CubeFace::kPosX},
+        {GlobalHeightMap::tex_size, CubeFace::kNegX},
+        {GlobalHeightMap::tex_size, CubeFace::kPosY},
+        {GlobalHeightMap::tex_size, CubeFace::kNegY},
+        {GlobalHeightMap::tex_size, CubeFace::kPosZ},
+        {GlobalHeightMap::tex_size, CubeFace::kNegZ}
       }
 { }
 
@@ -33,13 +33,16 @@ void CdlodTerrain::setup(const gl::Program& program) {
       GlobalHeightMap::max_height;
 
   gl::Uniform<glm::ivec2>(program, "Terrain_uTexSize") =
-      glm::ivec2(GlobalHeightMap::tex_w, GlobalHeightMap::tex_h);
+      glm::ivec2(GlobalHeightMap::tex_size, GlobalHeightMap::tex_size);
 
   gl::Uniform<float>(program, "Terrain_uNodeDimension") =
       GlobalHeightMap::node_dimension;
 
   gl::Uniform<float>(program, "Terrain_uLodLevelDistanceMultiplier") =
       GlobalHeightMap::lod_level_distance_multiplier;
+
+  gl::Uniform<int>(program, "Terrain_uMaxLoadLevel") =
+      faces_[0].max_node_level();
 }
 
 void CdlodTerrain::render(Camera const& cam) {

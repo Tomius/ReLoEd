@@ -12,12 +12,13 @@
 namespace engine {
 
 class CdlodQuadTree {
+  size_t max_node_level_;
   CdlodQuadTreeNode root_;
-  GLubyte max_node_level(size_t w, size_t h) const;
 
  public:
-  CdlodQuadTree(size_t w, size_t h, CubeFace face);
+  CdlodQuadTree(size_t tex_size, CubeFace face);
   void render(const engine::Camera& cam, QuadGridMesh& mesh);
+  size_t max_node_level() const { return max_node_level_; }
 };
 
 }  // namespace engine

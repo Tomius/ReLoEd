@@ -6,7 +6,8 @@
 #export bool Terrain_isValid(vec3 m_pos);
 #export float Terrain_getHeight(vec2 sample, out vec3 m_normal);
 
-uniform int Terrain_uFace = 0;
+uniform int Terrain_uFace;
+uniform int Terrain_uMaxLoadLevel;
 uniform ivec2 Terrain_uTexSize;
 uniform vec3 Terrain_uCamPos;
 uniform float Terrain_uNodeDimension;
@@ -82,39 +83,43 @@ vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal) {
   float level = render_data.w;
   vec2 pos = Terrain_nodeLocal2Global(m_pos, offset, scale);
   int iteration_count = 0;
+  float morph = 0;
 
-  float dist = Terrain_estimateDistance(pos);
-  float next_level_size = pow(2, level+1)
-                          * Terrain_uLodLevelDistanceMultiplier
-                          * Terrain_uNodeDimension;
-  float max_dist = morph_end * next_level_size;
-  float start_dist = morph_start * next_level_size;
-  float morph = smoothstep(start_dist, max_dist, dist);
-
-  vec2 morphed_pos = Terrain_morphVertex(m_pos, morph);
-  pos = Terrain_nodeLocal2Global(morphed_pos, offset, scale);
-  dist = Terrain_estimateDistance(pos);
-
-  while (dist > 1.5*next_level_size &&
-         (iteration_count+1 < Terrain_uNodeDimensionExp)) {
-    scale *= 2;
-    next_level_size *= 2;
-    iteration_count += 1;
-    max_dist = morph_end * next_level_size;
-    start_dist = morph_start * next_level_size;
+  if (level < Terrain_uMaxLoadLevel) {
+    float dist = Terrain_estimateDistance(pos);
+    float next_level_size = pow(2, level+1)
+                            * Terrain_uLodLevelDistanceMultiplier
+                            * Terrain_uNodeDimension;
+    float max_dist = morph_end * next_level_size;
+    float start_dist = morph_start * next_level_size;
     morph = smoothstep(start_dist, max_dist, dist);
-    if (morph == 0.0) {
-      break;
-    }
 
-    morphed_pos = Terrain_morphVertex(morphed_pos * 0.5, morph);
+    vec2 morphed_pos = Terrain_morphVertex(m_pos, morph);
     pos = Terrain_nodeLocal2Global(morphed_pos, offset, scale);
     dist = Terrain_estimateDistance(pos);
+
+    while (level + iteration_count < Terrain_uMaxLoadLevel &&
+           dist > 1.5*next_level_size &&
+           (iteration_count+1 < Terrain_uNodeDimensionExp)) {
+      scale *= 2;
+      next_level_size *= 2;
+      iteration_count += 1;
+      max_dist = morph_end * next_level_size;
+      start_dist = morph_start * next_level_size;
+      morph = smoothstep(start_dist, max_dist, dist);
+      if (morph == 0.0) {
+        break;
+      }
+
+      morphed_pos = Terrain_morphVertex(morphed_pos * 0.5, morph);
+      pos = Terrain_nodeLocal2Global(morphed_pos, offset, scale);
+      dist = Terrain_estimateDistance(pos);
+    }
   }
 
   float height = 0;
   m_normal = vec3(0, 1, 0);
-  return vec4(pos.x, height, pos.y, iteration_count + 0/*morph*/);
+  return vec4(pos.x, height, pos.y, iteration_count + morph);
 }
 
 vec2 Terrain_texCoord(vec3 pos) {

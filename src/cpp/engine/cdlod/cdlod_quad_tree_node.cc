@@ -13,7 +13,7 @@ CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z,
   bbox_ = SpherizedAABB{BoundingBox{
     {x-size()/2, 0, z-size()/2},
     {x+size()/2, GlobalHeightMap::max_height, z+size()/2}
-  }, face, GlobalHeightMap::tex_w};
+  }, face, GlobalHeightMap::tex_size};
 }
 
 void CdlodQuadTreeNode::initChild(int i) {
@@ -34,13 +34,10 @@ void CdlodQuadTreeNode::initChild(int i) {
 void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
                                const Frustum& frustum,
                                QuadGridMesh& grid_mesh) {
-  float lod_range = GlobalHeightMap::lod_level_distance_multiplier * size();
-  // grid_mesh.addToRenderList(x_, z_, scale(), level_);
-  // return;
-
   if (!bbox_.collidesWithFrustum(frustum)) { return; }
 
   last_used_ = 0;
+  float lod_range = GlobalHeightMap::lod_level_distance_multiplier * size();
 
   // If we can cover the whole area or if we are a leaf
   Sphere sphere{cam_pos, lod_range};
