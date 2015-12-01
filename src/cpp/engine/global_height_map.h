@@ -41,14 +41,16 @@ namespace GlobalHeightMap {
   static constexpr long geom_div = geom_div_base - level_offset;
 
   // The resolution of the heightmap
-  static constexpr long tex_size = 65536;
+  static constexpr long face_size = 65536;
 
   // The radius of the sphere made of the heightmap
-  static constexpr double sphere_radius = tex_size / 2;
+  static constexpr double sphere_radius = face_size / 2;
 
   static constexpr double mt_everest_height = 8848 * (sphere_radius / 6371000);
   static constexpr double height_scale = 0.1;
   static constexpr double max_height = height_scale * mt_everest_height;
+
+  extern bool wire_frame;
 
   // statistics
   extern size_t geom_nodes_count, texture_nodes_count, gpu_mem_usage;

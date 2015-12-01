@@ -9,12 +9,12 @@ namespace engine {
 
 CdlodTerrain::CdlodTerrain(engine::ShaderManager* manager)
     : faces_{
-        {GlobalHeightMap::tex_size, CubeFace::kPosX},
-        {GlobalHeightMap::tex_size, CubeFace::kNegX},
-        {GlobalHeightMap::tex_size, CubeFace::kPosY},
-        {GlobalHeightMap::tex_size, CubeFace::kNegY},
-        {GlobalHeightMap::tex_size, CubeFace::kPosZ},
-        {GlobalHeightMap::tex_size, CubeFace::kNegZ}
+        {GlobalHeightMap::face_size, CubeFace::kPosX},
+        {GlobalHeightMap::face_size, CubeFace::kNegX},
+        {GlobalHeightMap::face_size, CubeFace::kPosY},
+        {GlobalHeightMap::face_size, CubeFace::kNegY},
+        {GlobalHeightMap::face_size, CubeFace::kPosZ},
+        {GlobalHeightMap::face_size, CubeFace::kNegZ}
       }
 { }
 
@@ -33,7 +33,7 @@ void CdlodTerrain::setup(const gl::Program& program) {
       GlobalHeightMap::max_height;
 
   gl::Uniform<glm::ivec2>(program, "Terrain_uTexSize") =
-      glm::ivec2(GlobalHeightMap::tex_size, GlobalHeightMap::tex_size);
+      glm::ivec2(GlobalHeightMap::face_size, GlobalHeightMap::face_size);
 
   gl::Uniform<float>(program, "Terrain_uNodeDimension") =
       GlobalHeightMap::node_dimension;
@@ -53,8 +53,9 @@ void CdlodTerrain::render(Camera const& cam) {
 
   uCamPos_->set(cam.transform()->pos());
 
-  gl::FrontFace(gl::kCcw);
-  gl::TemporaryEnable cullface{gl::kCullFace};
+  if (!GlobalHeightMap::wire_frame) {
+    gl::Enable(gl::kCullFace);
+  }
 
   for (int face = 0; face < 6; ++face) {
     if (face % 2 == 0) {
@@ -66,6 +67,10 @@ void CdlodTerrain::render(Camera const& cam) {
     gl::Uniform<int>(*program_, "Terrain_uFace") = face;
     faces_[face].render(cam, mesh_);
     mesh_.render();
+  }
+
+  if (!GlobalHeightMap::wire_frame) {
+    gl::Disable(gl::kCullFace);
   }
 }
 

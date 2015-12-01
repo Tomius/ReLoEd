@@ -13,6 +13,8 @@ const char *GlobalHeightMap::dy_texture_base_path =
   // "/media/icecool/Data/onlab/src/resources/gmted75/normals/dy";
   "/media/icecool/SSData/gmted75/dy";
 
+bool GlobalHeightMap::wire_frame = false;
+
 size_t GlobalHeightMap::geom_nodes_count = 0;
 size_t GlobalHeightMap::texture_nodes_count = 0;
 size_t GlobalHeightMap::gpu_mem_usage = 0;

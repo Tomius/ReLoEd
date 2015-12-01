@@ -10,9 +10,9 @@
 
 namespace engine {
 
-CdlodQuadTree::CdlodQuadTree(size_t tex_size, CubeFace face)
-  : max_node_level_(log2(tex_size) - GlobalHeightMap::node_dimension_exp)
-  , root_(tex_size/2, tex_size/2, face, max_node_level_) {}
+CdlodQuadTree::CdlodQuadTree(size_t face_size, CubeFace face)
+  : max_node_level_(log2(face_size) - GlobalHeightMap::node_dimension_exp)
+  , root_(face_size/2, face_size/2, face, max_node_level_) {}
 
 void CdlodQuadTree::render(const engine::Camera& cam, QuadGridMesh& mesh) {
   root_.selectNodes(cam.transform()->pos(), cam.frustum(), mesh);

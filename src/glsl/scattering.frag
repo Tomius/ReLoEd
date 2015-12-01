@@ -13,6 +13,7 @@ uniform ivec2 uTexSize;
 uniform vec2 uResolution;
 uniform vec3 uCamPos;
 uniform mat3 uCameraMatrix;
+uniform int uWireFrame;
 
 // math const
 const float PI = 3.14159265359;
@@ -25,7 +26,7 @@ const float E = 14.3;                   // light intensity
 const vec3  C_R = vec3(0.3, 0.7, 1.0);  // 1 / wavelength ^ 4
 const float G_M = -0.85;                // Mie g
 
-float R_INNER = uTexSize.x / 2 / PI;
+float R_INNER = uTexSize.x / 2;
 float R = 1.02 * R_INNER;
 float MAX = 10.0 * R;
 float SCALE_H = 8.0 / (R - R_INNER);
@@ -144,7 +145,12 @@ vec3 Scattering() {
     return vec3(0);
   }
 
-  e.y = min(e.y, DistanceFromCamera());
+  if (uWireFrame == 1) {
+    vec2 f = ray_vs_sphere(uCamPos, rayDir, R_INNER);
+    e.y = min(e.y, f.x);
+  } else {
+    e.y = min(e.y, DistanceFromCamera());
+  }
   return in_scatter(uCamPos, rayDir, e, SunPos ());
 }
 

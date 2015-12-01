@@ -13,7 +13,7 @@ CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z,
   bbox_ = SpherizedAABB{BoundingBox{
     {x-size()/2, 0, z-size()/2},
     {x+size()/2, GlobalHeightMap::max_height, z+size()/2}
-  }, face, GlobalHeightMap::tex_size};
+  }, face, GlobalHeightMap::face_size};
 }
 
 void CdlodQuadTreeNode::initChild(int i) {

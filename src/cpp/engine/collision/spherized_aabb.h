@@ -163,7 +163,7 @@ class SpherizedAABB {
       return false;
     }
 
-    return true;
+    return aabb_.collidesWithSphere(sphere);
   }
 
   bool collidesWithFrustum(const Frustum& frustum) const {

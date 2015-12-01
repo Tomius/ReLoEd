@@ -1,6 +1,7 @@
 // Copyright (c) 2015, Tamas Csala
 
 #include "grid_mesh.h"
+#include "../../global_height_map.h"
 #include "../../oglwrap_all.h"
 
 namespace engine {
@@ -75,12 +76,16 @@ void GridMesh::render() {
 
   gl::TemporaryEnable prim_restart(gl::kPrimitiveRestart);
 
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  if (GlobalHeightMap::wire_frame) {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  }
   gl::DrawElementsInstanced(PrimType::kTriangleStrip,
                             index_count_,
                             IndexType::kUnsignedShort,
                             render_data_.size());   // instance count
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  if (GlobalHeightMap::wire_frame) {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  }
 
   gl::Unbind(vao_);
 }
