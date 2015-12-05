@@ -1,23 +1,16 @@
 #include <iostream>
-#include "tex_quad_tree_node.h"
+#include "./tex_quad_tree_node.h"
+#include "./cdlod_quad_tree_node.h"
 
-int main() {
+int main(int argv, char** argc) {
   int tw = 172800, th = 86400;
-  TexQuadTreeNode root (nullptr, tw/2, th/2, tw, th, 9, 0);
+  TexQuadTreeNode tex_node (nullptr, tw/2, th/2, tw, th, 9, 0);
 
-  int w = 337+6, h = 168+6;
-  unsigned short *image = new unsigned short[w*h];
-  for (int x = 0; x < w; ++x) {
-    for (int y = 0; y < h; ++y) {
-      unsigned short value = root.SelectPixel ((x-3)*(tw/(w-6)), (y-3)*(th/(h-6)), 9);
-      image[y*w + x] = value;
-    }
+  char face = argc[1][0];
+  if ('0' <= face && face < '6') {
+    CdlodQuadTreeNode node (kFaceSize/2, kFaceSize/2, CubeFace(face-'0'), kMaxLevel);
+    node.GenerateImage(tex_node);
+  } else {
+    std::cout << "Invalid face parameter!";
   }
-
-  Magick::Image out;
-  out.matte(false);
-  out.quality(100);
-  out.defineValue("png", "bit-depth", "16");
-  out.read(w, h, "I", Magick::ShortPixel, image);
-  out.write("out.png");
 }

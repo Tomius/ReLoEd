@@ -30,9 +30,11 @@ struct svec2 {
 class GridMesh {
   gl::VertexArray vao_;
   gl::IndexBuffer aIndices_;
-  gl::ArrayBuffer aPositions_, aRenderData_;
+  gl::ArrayBuffer aPositions_, aRenderData_, aTextureIds_, aTextureInfo_;
   int index_count_, dimension_;
   std::vector<glm::vec4> render_data_; // xy: offset, z: scale, w: level
+  std::vector<uint64_t> texture_ids_;
+  std::vector<glm::vec3> texture_info_;
 
   GLushort indexOf(int x, int y);
   GLushort kPrimitiveRestart = std::numeric_limits<GLushort>::max();
@@ -41,9 +43,11 @@ class GridMesh {
   GridMesh(GLubyte dimension);
   void setupPositions(gl::VertexAttrib attrib);
   void setupRenderData(gl::VertexAttrib attrib);
+  void setupTextureIds(gl::VertexAttrib attrib);
+  void setupTextureInfo(gl::VertexAttrib attrib);
 
-  // xy: offset, z: scale, w: level
-  void addToRenderList(const glm::vec4& render_data);
+  void addToRenderList(const glm::vec4& render_data, uint64_t texture,
+                       const glm::vec3& texture_info);
   void clearRenderList();
 
   // render with vertex attrib divisor

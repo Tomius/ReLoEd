@@ -92,11 +92,11 @@ class FpsDisplay : public engine::Behaviour {
     accum_calls_++; sum_calls_++;
 
     double fps = accum_calls_ / accum_time_;
-    size_t geom_nodes_count = engine::GlobalHeightMap::geom_nodes_count;
+    size_t geom_nodes_count = engine::Settings::geom_nodes_count;
     size_t triangle_count = (geom_nodes_count
-          << (2*engine::GlobalHeightMap::node_dimension_exp)) / 1000;
+          << (2*(engine::Settings::node_dimension_exp-1))) / 1000;
     size_t triangles_per_sec = triangle_count * fps / 1000;
-    size_t gpu_mem_usage = engine::GlobalHeightMap::gpu_mem_usage/1024/1024;
+    size_t gpu_mem_usage = engine::Settings::gpu_mem_usage/1024/1024;
 
     sum_frame_num_ += 1;
     min_fps_ = std::min(min_fps_, fps);
@@ -121,7 +121,7 @@ class FpsDisplay : public engine::Behaviour {
         std::to_wstring(triangles_per_sec) + L"M");
 
       texture_nodes_->set_text(L"Texture nodes: " +
-        std::to_wstring(engine::GlobalHeightMap::texture_nodes_count));
+        std::to_wstring(engine::Settings::texture_nodes_count));
 
       memory_usage_->set_text(L"GPU memory usage: " +
         std::to_wstring(gpu_mem_usage) + L"MB");

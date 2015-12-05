@@ -16,29 +16,50 @@ void QuadGridMesh::setupRenderData(gl::VertexAttrib attrib) {
   mesh_.setupRenderData(attrib);
 }
 
+void QuadGridMesh::setupTextureIds(gl::VertexAttrib attrib) {
+  mesh_.setupTextureIds(attrib);
+}
+
+void QuadGridMesh::setupTextureInfo(gl::VertexAttrib attrib) {
+  mesh_.setupTextureInfo(attrib);
+}
+
 // Adds a subquad to the render list.
 // tl = top left, br = bottom right
 void QuadGridMesh::addToRenderList(float offset_x, float offset_y,
-                                   float scale, float level,
+                                   float scale, float level, uint64_t texture,
+                                   const glm::vec3& texture_info,
                                    bool tl, bool tr, bool bl, bool br) {
   glm::vec4 render_data(offset_x, offset_y, scale, level);
   float dim4 = scale * mesh_.dimension()/2; // our dimension / 4
-  if(tl) { mesh_.addToRenderList(render_data + glm::vec4(-dim4, dim4, 0, 0)); }
-  if(tr) { mesh_.addToRenderList(render_data + glm::vec4(dim4, dim4, 0, 0)); }
-  if(bl) { mesh_.addToRenderList(render_data + glm::vec4(-dim4, -dim4, 0, 0)); }
-  if(br) { mesh_.addToRenderList(render_data + glm::vec4(dim4, -dim4, 0, 0)); }
+  if (tl) {
+    mesh_.addToRenderList(render_data + glm::vec4(-dim4, dim4, 0, 0),
+                          texture, texture_info);
+  }
+  if (tr) {
+    mesh_.addToRenderList(render_data + glm::vec4(dim4, dim4, 0, 0),
+                          texture, texture_info);
+  }
+  if (bl) {
+    mesh_.addToRenderList(render_data + glm::vec4(-dim4, -dim4, 0, 0),
+                          texture, texture_info);
+  }
+  if (br) {
+    mesh_.addToRenderList(render_data + glm::vec4(dim4, -dim4, 0, 0),
+                          texture, texture_info);
+  }
 }
 
 // Adds all four subquads
-void QuadGridMesh::addToRenderList(float offset_x, float offset_y,
-                                   float scale, float level) {
-  addToRenderList(offset_x, offset_y, scale, level, true, true, true, true);
-  engine::GlobalHeightMap::geom_nodes_count++;
+void QuadGridMesh::addToRenderList(float offset_x, float offset_y, float scale,
+                                   float level, uint64_t texture,
+                                   const glm::vec3& texture_info) {
+  addToRenderList(offset_x, offset_y, scale, level,
+                  texture, texture_info, true, true, true, true);
 }
 
 void QuadGridMesh::clearRenderList() {
   mesh_.clearRenderList();
-  engine::GlobalHeightMap::geom_nodes_count = 0;
 }
 
 void QuadGridMesh::render() {

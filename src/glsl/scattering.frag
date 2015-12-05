@@ -146,8 +146,10 @@ vec3 Scattering() {
   }
 
   if (uWireFrame == 1) {
-    vec2 f = ray_vs_sphere(uCamPos, rayDir, R_INNER);
-    e.y = min(e.y, f.x);
+    float dist_from_camera = ray_vs_sphere(uCamPos, rayDir, R_INNER).x;
+    if (dist_from_camera > 0) {
+      e.y = min(e.y, dist_from_camera);
+    }
   } else {
     e.y = min(e.y, DistanceFromCamera());
   }

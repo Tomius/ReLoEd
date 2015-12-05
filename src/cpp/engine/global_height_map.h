@@ -9,12 +9,7 @@
 
 namespace engine {
 
-namespace GlobalHeightMap {
-  // the path of the directory where the heightmap lies
-  extern const char *height_texture_base_path;
-  extern const char *dx_texture_base_path;
-  extern const char *dy_texture_base_path;
-
+namespace Settings {
   static constexpr int level_offset = 0;
 
   // CDLOD nodes' extent is (1 << node_dimension_exp)
@@ -22,6 +17,11 @@ namespace GlobalHeightMap {
   static_assert(4 <= node_dimension_exp && node_dimension_exp <= 8, "");
 
   static constexpr int node_dimension = 1 << node_dimension_exp;
+
+  static constexpr int kTextureDimensionExp = 8;
+  static constexpr int kTextureDimension = 1 << kTextureDimensionExp;
+
+  static constexpr int kTextureBorderSize = 3;
 
   // The size of sphere for a CDLOD level is node size * this
   // It should be at least 2, but making it bigger makes distant
@@ -47,7 +47,7 @@ namespace GlobalHeightMap {
   static constexpr double sphere_radius = face_size / 2;
 
   static constexpr double mt_everest_height = 8848 * (sphere_radius / 6371000);
-  static constexpr double height_scale = 0.1;
+  static constexpr double height_scale = 5;
   static constexpr double max_height = height_scale * mt_everest_height;
 
   extern bool wire_frame;

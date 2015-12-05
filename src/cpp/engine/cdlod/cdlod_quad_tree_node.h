@@ -15,7 +15,7 @@ class CdlodQuadTreeNode {
   CdlodQuadTreeNode(double x, double z, CubeFace face, int level);
 
   double scale() const { return pow(2, level_); }
-  double size() { return GlobalHeightMap::node_dimension * scale(); }
+  double size() { return Settings::node_dimension * scale(); }
 
   bool collidesWithSphere(const Sphere& sphere) const {
     return bbox_.collidesWithSphere(sphere);
@@ -24,7 +24,14 @@ class CdlodQuadTreeNode {
   void age();
   void selectNodes(const glm::vec3& cam_pos,
                    const Frustum& frustum,
-                   QuadGridMesh& grid_mesh);
+                   QuadGridMesh& grid_mesh,
+                   uint64_t texture_id = 0,
+                   glm::vec3 texture_info = glm::vec3{});
+
+  void selectTexture(const glm::vec3& cam_pos,
+                     const Frustum& frustum,
+                     uint64_t& texture_id,
+                     glm::vec3& texture_info);
 
  private:
   double x_, z_;
@@ -32,6 +39,10 @@ class CdlodQuadTreeNode {
   int level_;
 
   SpherizedAABB bbox_;
+  gl::Texture2D texture_;
+  uint64_t texture_id_ = 0;
+  glm::vec3 texture_info_;
+  bool is_texture_uploaded_ = false;
   std::unique_ptr<CdlodQuadTreeNode> children_[4];
   int last_used_ = 0;
 
@@ -39,6 +50,8 @@ class CdlodQuadTreeNode {
   static const int kTimeToLiveInMemory = 1 << 8;
 
   void initChild(int i);
+  std::string getHeightMapPath() const;
+  int textureLevel() const;
 };
 
 }

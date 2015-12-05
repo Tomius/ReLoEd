@@ -6,6 +6,7 @@
 #include <memory>
 #include <cassert>
 #include <Magick++.h>
+#include "./settings.h"
 
 using TexelData = unsigned short;
 
@@ -54,10 +55,11 @@ class TexQuadTreeNode {
     assert(0 <= i && i < 4); return children_[i].get();
   }
 
-  unsigned short SelectPixel (int x, int y, int level);
+  unsigned short SelectPixel (double x, double y, int level);
+  unsigned short FetchPixel (int x, int y, int level);
 
  private:
-  unsigned short SelectPixelInternal (int x, int y, int level);
+  unsigned short FetchPixelInternal (int x, int y, int level);
   TexQuadTreeNode* parent_;
   double x_, z_, sx_, sz_;
   unsigned tex_w_, tex_h_, index_, data_start_offset_ = 0;
@@ -66,7 +68,7 @@ class TexQuadTreeNode {
   std::vector<TexelData> data_;
 
   int last_used_ = 0;
-  static const int kTimeToLiveInMemory = 1 << 16;
+  static const int kTimeToLiveInMemory = 1 << 12;
 
   template<typename T>
   void initChildInternal(int i);

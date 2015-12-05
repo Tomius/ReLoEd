@@ -41,13 +41,13 @@ void GameEngine::InitContext() {
     // Window creation
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_DEPTH_BITS, 32);
     glfwWindowHint(GLFW_STENCIL_BITS, 0);
 
 #if ENGINE_NO_FULLSCREEN
-    window_ = glfwCreateWindow(1440, 810,
+    window_ = glfwCreateWindow(vidmode->width, vidmode->height,
                                "Land of Earth", nullptr, nullptr);
 #else
     window_ = glfwCreateWindow(vidmode->width, vidmode->height,

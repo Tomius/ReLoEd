@@ -15,15 +15,21 @@ class QuadGridMesh {
  public:
   // Specify the size of the 4 subquads together, not the size of one subquad
   // It should be between 2 and 256, and should be a power of 2
-  QuadGridMesh(int dimension = GlobalHeightMap::node_dimension);
+  QuadGridMesh(int dimension = Settings::node_dimension);
 
   void setupPositions(gl::VertexAttrib attrib);
   void setupRenderData(gl::VertexAttrib attrib);
+  void setupTextureIds(gl::VertexAttrib attrib);
+  void setupTextureInfo(gl::VertexAttrib attrib);
+
   // Adds a subquad to the render list. tl = top left, br = bottom right
   void addToRenderList(float offset_x, float offset_y, float scale, float level,
+                       uint64_t texture, const glm::vec3& texture_info,
                        bool tl, bool tr, bool bl, bool br);
   // Adds all four subquads
-  void addToRenderList(float offset_x, float offset_y, float scale, float level);
+  void addToRenderList(float offset_x, float offset_y, float scale,
+                       float level, uint64_t texture,
+                       const glm::vec3& texture_info);
   void clearRenderList();
   void render();
   size_t node_count() const;

@@ -6,6 +6,8 @@
 
 in vec2 Terrain_aPosition;
 in vec4 Terrain_aRenderData;
+in uvec2 Terrain_aTextureId;
+in vec3 Terrain_aTextureInfo;
 
 uniform float uDepthCoef;
 uniform mat4 uProjectionMatrix, uCameraMatrix, uModelMatrix;
@@ -16,6 +18,8 @@ out VertexData {
   vec2  texCoord;
   float level, morph;
   vec4 render_data;
+  flat uvec2 texId;
+  flat vec3 texInfo;
 } vOut;
 
 void main() {
@@ -40,6 +44,9 @@ void main() {
 
   vOut.level = Terrain_aRenderData.w;
   vOut.render_data = Terrain_aRenderData;
+  vOut.texId = Terrain_aTextureId;
+  vOut.texInfo = Terrain_aTextureInfo;
+
   vec4 projected = uProjectionMatrix * c_pos;
   projected.z = log2(max(1e-6, 1.0 + projected.w)) * uDepthCoef - 1.0;
   projected.z *= projected.w;

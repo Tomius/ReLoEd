@@ -1,10 +1,14 @@
+// Copyright (c) 2015, Tamas Csala
+
 #version 330
+#extension GL_ARB_bindless_texture : require
 
 #export vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal);
 #export vec3 Terrain_worldPos(vec3 model_pos);
 #export vec2 Terrain_texCoord(vec3 pos);
-#export bool Terrain_isValid(vec3 m_pos);
-#export float Terrain_getHeight(vec2 sample, out vec3 m_normal);
+
+in uvec2 Terrain_aTextureId;
+in vec3 Terrain_aTextureInfo;
 
 uniform int Terrain_uFace;
 uniform int Terrain_uMaxLoadLevel;
@@ -14,7 +18,7 @@ uniform float Terrain_uNodeDimension;
 uniform float Terrain_uLodLevelDistanceMultiplier;
 int Terrain_uNodeDimensionExp = int(round(log2(Terrain_uNodeDimension)));
 
-uniform int Terrain_max_height;
+uniform int Terrain_uMaxHeight;
 
 float M_PI = 3.14159265359;
 const float morph_end = 0.95, morph_start = 0.8;
@@ -35,8 +39,8 @@ float sqr(float x) {
 
 vec3 Cubify(vec3 p) {
   return vec3(
-    p.x * sqrt(1 - sqr(p.y)/2 - sqr(p.z)/2 + sqr(p.y*p.z)/3),
-    p.y * sqrt(1 - sqr(p.z)/2 - sqr(p.x)/2 + sqr(p.z*p.x)/3),
+    -p.x * sqrt(1 - sqr(p.y)/2 - sqr(p.z)/2 + sqr(p.y*p.z)/3),
+    -p.y * sqrt(1 - sqr(p.z)/2 - sqr(p.x)/2 + sqr(p.z*p.x)/3),
     p.z * sqrt(1 - sqr(p.x)/2 - sqr(p.y)/2 + sqr(p.x*p.y)/3)
   );
 }
@@ -45,23 +49,18 @@ vec3 Terrain_worldPos(vec3 pos) {
   float height = pos.y; pos.y = 0;
   pos = (pos - Terrain_uTexSize.x/2) / (Terrain_uTexSize.x/2);
   switch (Terrain_uFace) {
-    case kPosX: pos = vec3(+pos.z, +pos.x, +pos.y); break;
-    case kNegX: pos = vec3(+pos.z, +pos.x, -pos.y); break;
-    case kPosY: pos = vec3(+pos.x, +pos.y, +pos.z); break;
-    case kNegY: pos = vec3(+pos.x, -pos.y, +pos.z); break;
-    case kPosZ: pos = vec3(+pos.y, +pos.z, +pos.x); break;
-    case kNegZ: pos = vec3(-pos.y, +pos.z, +pos.x); break;
+    case kPosX: pos = vec3(+pos.y, +pos.z, -pos.x); break;
+    case kNegX: pos = vec3(-pos.y, +pos.z, +pos.x); break;
+    case kPosY: pos = vec3(+pos.z, +pos.y, +pos.x); break;
+    case kNegY: pos = vec3(-pos.z, -pos.y, +pos.x); break;
+    case kPosZ: pos = vec3(+pos.x, +pos.z, +pos.y); break;
+    case kNegZ: pos = vec3(-pos.x, +pos.z, -pos.y); break;
   }
   return (Terrain_radius + height) * Cubify(pos);
 }
 
-bool Terrain_isValid(vec3 m_pos) {
-  return 0 <= m_pos.x && m_pos.x <= Terrain_uTexSize.x &&
-         0 <= m_pos.z && m_pos.z <= Terrain_uTexSize.y;
-}
-
 float Terrain_estimateDistance(vec2 geom_pos) {
-  float est_height = clamp(Terrain_cam_height, 0, Terrain_max_height);
+  float est_height = clamp(Terrain_cam_height, 0, Terrain_uMaxHeight);
   vec3 est_pos = vec3(geom_pos.x, est_height, geom_pos.y);
   vec3 est_diff = Terrain_uCamPos - Terrain_worldPos(est_pos);
   return length(est_diff);
@@ -75,6 +74,11 @@ vec2 Terrain_morphVertex(vec2 vertex, float morph) {
 vec2 Terrain_nodeLocal2Global(vec2 node_coord, vec2 offset, float scale) {
   vec2 pos = offset + scale * node_coord;
   return pos;
+}
+
+float Terrain_getHeight(vec2 pos) {
+  vec2 sample = (pos - Terrain_aTextureInfo.xy) / Terrain_aTextureInfo.z;
+  return texture(sampler2D(Terrain_aTextureId), sample).r * Terrain_uMaxHeight;
 }
 
 vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal) {
@@ -117,7 +121,7 @@ vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal) {
     }
   }
 
-  float height = 0;
+  float height = Terrain_getHeight(pos);
   m_normal = vec3(0, 1, 0);
   return vec4(pos.x, height, pos.y, iteration_count + morph);
 }

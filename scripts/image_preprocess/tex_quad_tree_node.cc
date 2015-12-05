@@ -7,7 +7,6 @@
 #include "./tex_quad_tree_node.h"
 
 static const char* input_path = "/media/icecool/SSData/gmted75/height";
-const int kBorderSize = 3;
 
 TexQuadTreeNode::TexQuadTreeNode(TexQuadTreeNode* parent,
                                  double x, double z, double sx, double sz,
@@ -15,7 +14,8 @@ TexQuadTreeNode::TexQuadTreeNode(TexQuadTreeNode* parent,
     : parent_(parent)
     , x_(x), z_(z)
     , sx_(sx), sz_(sz)
-    , index_(index), level_(level) {}
+    , index_(index), level_(level)
+{ }
 
 std::string TexQuadTreeNode::map_path(const char* base_path) const {
   char file_path[200];
@@ -99,25 +99,26 @@ void TexQuadTreeNode::initChild(int i) {
   initChildInternal<int>(i);
 }
 
-unsigned short TexQuadTreeNode::SelectPixel(int x, int z, int level) {
+unsigned short TexQuadTreeNode::FetchPixel(int x, int z, int level) {
   if (x < 0) {
     x += sx_;
   } else if (sx_ <= x) {
-    x -= sz_;
+    x -= sx_;
   }
 
   if (z < 0) {
     z = std::abs(z);
-  } else if (sz_ < z) {
-    z = sz_ - (z - sz_);
+  } else if (sz_ <= z) {
+    z = sz_ - (z - sz_ + 1);
   }
 
-  unsigned short ret = SelectPixelInternal(x, z, level);
+  unsigned short ret = FetchPixelInternal(x, z, level);
   age();
   return ret;
 }
 
-unsigned short TexQuadTreeNode::SelectPixelInternal(int x, int z, int level) {
+unsigned short TexQuadTreeNode::FetchPixelInternal(int x, int z, int level) {
+  // std::cout << x << ", " << z << ", " << level << std::endl;
   assert (level_ >= level);
   assert (int_left_x() <= x && x < int_right_x());
   assert (int_top_z() <= z && z < int_bottom_z());
@@ -126,9 +127,11 @@ unsigned short TexQuadTreeNode::SelectPixelInternal(int x, int z, int level) {
 
   if (level == level_) {
     load();
-    int col = (x - int_left_x()) / sx_ * (tex_w_-2*kBorderSize) + kBorderSize;
-    int row = (z - int_top_z()) / sz_ * (tex_h_-2*kBorderSize) + kBorderSize;
-    return data_[row*tex_w_ + col];
+    int col = (x - int_left_x()) / sx_ * (tex_w_ - 2*kBorderSize) + kBorderSize;
+    int row = (z - int_top_z()) / sz_ * (tex_h_ - 2*kBorderSize) + kBorderSize;
+    int idx = row*tex_w_ + col;
+    assert(0 <= idx && idx < data_.size());
+    return data_[idx];
   } else {
     int idx;
     if (x < x_) {
@@ -140,7 +143,59 @@ unsigned short TexQuadTreeNode::SelectPixelInternal(int x, int z, int level) {
     if (!children_[idx]) {
       initChild(idx);
     }
-    return children_[idx]->SelectPixelInternal(x, z, level);
+    return children_[idx]->FetchPixelInternal(x, z, level);
   }
+}
+
+
+static float BellFunc(float x) {
+  float f = x * 0.75; // Converting -2 to +2 to -1.5 to +1.5
+  if (f > -1.5 && f < -0.5) {
+    return 0.5 * pow(f + 1.5, 2.0);
+  } else if (f > -0.5 && f < 0.5) {
+    return 3.0 / 4.0 - (f*f);
+  } else if (f > 0.5 && f < 1.5) {
+    return 0.5 * pow(f - 1.5, 2.0);
+  } else {
+    return 0.0;
+  }
+}
+
+static float CatMullRom(float x) {
+  const float B = 0.0;
+  const float C = 0.5;
+  float f = std::abs(x);
+
+  if (f < 1.0) {
+    return ((12 - 9*B - 6*C) * (f*f*f) +
+            (-18 + 12*B + 6*C) * (f*f) +
+            (6 - 2*B)) / 6.0;
+  } else if (1.0 <= f && f < 2.0) {
+    return ((-B - 6*C) * (f*f*f) +
+            (6*B + 30*C) * (f*f) +
+            (-12*B - 48*C) * f +
+             8*B + 24*C) / 6.0;
+  } else {
+    return 0.0;
+  }
+}
+
+unsigned short TexQuadTreeNode::SelectPixel(double sample_x, double sample_z, int level) {
+  glm::ivec2 top_left = glm::ivec2(glm::floor(glm::dvec2{sample_x, sample_z}));
+  glm::dvec2 fraction = glm::fract(glm::dvec2{sample_x, sample_z});
+
+  double sum = 0.0;
+  double sum_weight = 0.0;
+  for (int x = -1; x <= 2; x++) {
+    for (int y = -1; y <= 2; y++) {
+      glm::ivec2 pos = top_left + glm::ivec2(x, y);
+      double weight = CatMullRom(x - fraction.x)
+                    * CatMullRom(-y + fraction.y);
+      sum_weight += weight;
+      sum += FetchPixel(pos.x, pos.y, level) * weight;
+    }
+  }
+
+  return clamp(sum / sum_weight, 0, 65535);
 }
 

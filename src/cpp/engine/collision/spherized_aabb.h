@@ -35,7 +35,7 @@ class SpherizedAABB {
 
     const glm::dvec3& mins = bbox.mins();
     const glm::dvec3& maxes = bbox.maxes();
-    double radius = GlobalHeightMap::sphere_radius;
+    double radius = Settings::sphere_radius;
     radial_extent_ = {radius + mins.y, radius + maxes.y};
 
     /*
