@@ -5,7 +5,6 @@
 
 #include <climits>
 #include "./transform.h"
-#include "./texture_source.h"
 
 namespace engine {
 
@@ -26,7 +25,7 @@ namespace Settings {
   // The size of sphere for a CDLOD level is node size * this
   // It should be at least 2, but making it bigger makes distant
   // parts of the terrain appear with more detail.
-  static constexpr double lod_level_distance_multiplier = 1.0;
+  static constexpr double lod_level_distance_multiplier = 3.0;
   static_assert(1 <= lod_level_distance_multiplier, "");
 
   static constexpr double texture_level_distance_multiplier = 4.0;
@@ -53,7 +52,7 @@ namespace Settings {
   extern bool wire_frame;
 
   // statistics
-  extern size_t geom_nodes_count, texture_nodes_count, gpu_mem_usage;
+  extern size_t geom_nodes_count, texture_nodes_count;
 };
 
 }  // namespace engine

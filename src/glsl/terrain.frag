@@ -16,13 +16,35 @@ in VertexData {
   flat vec3 texInfo;
 } vIn;
 
-float Terrain_getHeight(vec2 pos) {
+uniform int Terrain_uFace;
+uniform int Terrain_uMaxHeight;
+
+float GetHeight(vec2 pos) {
   vec2 sample = (pos - vIn.texInfo.xy) / vIn.texInfo.z;
   return texture(sampler2D(vIn.texId), sample).r;
 }
 
+vec3 GetNormal(vec2 pos) {
+  float diff = vIn.texInfo.z / 262;
+  float py = GetHeight(vec2(pos.x, pos.y + diff)) * Terrain_uMaxHeight;
+  float my = GetHeight(vec2(pos.x, pos.y - diff)) * Terrain_uMaxHeight;
+  float px = GetHeight(vec2(pos.x + diff, pos.y)) * Terrain_uMaxHeight;
+  float mx = GetHeight(vec2(pos.x - diff, pos.y)) * Terrain_uMaxHeight;
+
+  return normalize(vec3(px-mx, diff, py-my));
+}
+
 void main() {
-  fragColor = vec4(pow(Terrain_getHeight(vIn.m_pos.xz), 1/2.2));
-  // fragColor = vec4(0.5*dot(normalize(vIn.w_normal), vec3(0, 1, 0)) + 0.5);
-  fragDepth = 0;
+  float height = GetHeight(vIn.m_pos.xz);
+  float luminance = 0.2 + max(dot(GetNormal(vIn.m_pos.xz), normalize(vec3(1, 1, 0))), 0);
+  vec3 diffuse = vec3(0.0);
+  if (Terrain_uFace/2 == 0) {
+    diffuse = vec3(1, 0.75, 0.75);
+  } else if (Terrain_uFace/2 == 1) {
+    diffuse = vec3(0.75, 1, 0.75);
+  } else if (Terrain_uFace/2 == 2) {
+    diffuse = vec3(0.75, 0.75, 1);
+  }
+  fragColor = vec4(luminance*diffuse, 1);
+  fragDepth = length(vIn.c_pos);
 }

@@ -102,6 +102,7 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
       is_texture_uploaded_ = true;
     }
 
+    Settings::texture_nodes_count++;
     texture_id = texture_id_;
     texture_info = texture_info_;
   }
@@ -123,7 +124,7 @@ void CdlodQuadTreeNode::age() {
 }
 
 std::string CdlodQuadTreeNode::getHeightMapPath() const {
-  return std::string{"/media/icecool/Data/BME/szakdoga/height"}
+  return std::string{"src/resources/height"}
          + "/" + std::to_string(int(face_))
          + "/" + std::to_string(textureLevel())
          + "/" + std::to_string(long(x_))

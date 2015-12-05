@@ -55,12 +55,13 @@ void CdlodTerrain::render(Camera const& cam) {
 
   uCamPos_->set(cam.transform()->pos());
 
-  gl::FrontFace(gl::kCw);
+  gl::FrontFace(gl::kCcw);
   // if (!Settings::wire_frame) {
-    // gl::Enable(gl::kCullFace);
+    gl::Enable(gl::kCullFace);
   // }
 
   engine::Settings::geom_nodes_count = 0;
+  engine::Settings::texture_nodes_count = 0;
   for (int face = 0; face < 6; ++face) {
     mesh_.clearRenderList();
     gl::Uniform<int>(*program_, "Terrain_uFace") = face;
@@ -69,7 +70,7 @@ void CdlodTerrain::render(Camera const& cam) {
   }
 
   // if (!Settings::wire_frame) {
-    // gl::Disable(gl::kCullFace);
+    gl::Disable(gl::kCullFace);
   // }
 }
 

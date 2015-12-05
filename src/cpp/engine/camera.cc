@@ -23,8 +23,8 @@ void FreeFlyCamera::update() {
 
   // Mouse movement - update the coordinate system
   if (diff.x || diff.y) {
-    double dx(diff.x * mouse_sensitivity_ * dt / 16);
-    double dy(-diff.y * mouse_sensitivity_ * dt / 16);
+    double dx(diff.x * mouse_sensitivity_ / 10000);
+    double dy(-diff.y * mouse_sensitivity_ / 10000);
 
     // If we are looking up / down, we don't want to be able
     // to rotate to the other side
@@ -79,7 +79,7 @@ void ThirdPersonalCamera::update() {
 
   // Mouse movement - update the coordinate system
   if (diff.x || diff.y) {
-    double mouse_sensitivity = mouse_sensitivity_ * curr_dist_mod_ * dt / 64;
+    double mouse_sensitivity = mouse_sensitivity_ * curr_dist_mod_ / 10000;
     double dx(diff.x * mouse_sensitivity);
     double dy(-diff.y * mouse_sensitivity);
 

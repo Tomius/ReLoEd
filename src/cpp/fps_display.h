@@ -96,7 +96,8 @@ class FpsDisplay : public engine::Behaviour {
     size_t triangle_count = (geom_nodes_count
           << (2*(engine::Settings::node_dimension_exp-1))) / 1000;
     size_t triangles_per_sec = triangle_count * fps / 1000;
-    size_t gpu_mem_usage = engine::Settings::gpu_mem_usage/1024/1024;
+    size_t gpu_mem_usage = engine::Settings::texture_nodes_count
+                           *262*262*2/1024/1024;
 
     sum_frame_num_ += 1;
     min_fps_ = std::min(min_fps_, fps);
