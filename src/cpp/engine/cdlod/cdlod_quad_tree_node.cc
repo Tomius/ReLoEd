@@ -36,13 +36,14 @@ void CdlodQuadTreeNode::initChild(int i) {
 void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
                                     const Frustum& frustum,
                                     QuadGridMesh& grid_mesh,
+                                    ThreadPool& thread_pool,
                                     uint64_t texture_id /*= 0*/,
                                     glm::vec3 texture_info /*= glm::vec3{}*/) {
   if (!bbox_.collidesWithFrustum(frustum)) { return; }
 
   last_used_ = 0;
   float lod_range = Settings::lod_level_distance_multiplier * size();
-  selectTexture(cam_pos, frustum, texture_id, texture_info);
+  selectTexture(cam_pos, frustum, thread_pool, texture_id, texture_info);
 
   // If we can cover the whole area or if we are a leaf
   Sphere sphere{cam_pos, lod_range};
@@ -58,7 +59,7 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
       cc[i] = children_[i]->collidesWithSphere(sphere);
       if (cc[i]) {
         // Ask child to render what we can't
-        children_[i]->selectNodes(cam_pos, frustum, grid_mesh,
+        children_[i]->selectNodes(cam_pos, frustum, grid_mesh, thread_pool,
                                   texture_id, texture_info);
       }
     }
@@ -72,39 +73,26 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
 
 void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
                                       const Frustum& frustum,
+                                      ThreadPool& thread_pool,
                                       uint64_t& texture_id,
                                       glm::vec3& texture_info) {
+  if (textureLevel() == 8) {
+    loadTexture();
+    upload();
+  }
+
   if (textureLevel() >= 1) {
-    if (!is_texture_uploaded_) {
-      gl::Bind(texture_);
-      Magick::Image image{getHeightMapPath()};
-      std::vector<unsigned short> data;
-      size_t w = image.columns(), h = image.rows();
-      data.resize(w*h);
-      image.write(0, 0, w, h, "R", MagickCore::ShortPixel, data.data());
-      texture_.upload(gl::kR16, w, h, gl::kRed, gl::kUnsignedShort, data.data());
-
-      texture_.generateMipmap();
-      texture_.maxAnisotropy();
-      texture_.minFilter(gl::kLinearMipmapLinear);
-      texture_.magFilter(gl::kLinear);
-      texture_.wrapS(gl::kClampToEdge);
-      texture_.wrapT(gl::kClampToEdge);
-
-      texture_id_ = gl(GetTextureHandleARB(texture_.expose()));
-      gl(MakeTextureHandleResidentARB(texture_id_));
-      gl::Unbind(texture_);
-
-      double scale = (Settings::kTextureDimension+2.0*Settings::kTextureBorderSize) / Settings::kTextureDimension;
-      double s2 = scale*size()/2;
-      texture_info_ = glm::vec3(x_ - s2, z_ - s2, 2*s2);
-
-      is_texture_uploaded_ = true;
+    if (is_loaded_to_gpu_) {
+      Settings::texture_nodes_count++;
+      texture_id = texture_id_;
+      texture_info = texture_info_;
+    } else if (is_loaded_to_memory_) {
+      upload();
+    } else {
+      thread_pool.enqueue([this](){
+        loadTexture();
+      });
     }
-
-    Settings::texture_nodes_count++;
-    texture_id = texture_id_;
-    texture_info = texture_info_;
   }
 }
 
@@ -134,6 +122,46 @@ std::string CdlodQuadTreeNode::getHeightMapPath() const {
 int CdlodQuadTreeNode::textureLevel() const {
   return std::max(level_ - (Settings::kTextureDimensionExp - Settings::node_dimension_exp), 0);
 }
+
+void CdlodQuadTreeNode::loadTexture() {
+  std::unique_lock<std::mutex> lock{load_mutex_};
+
+  if (!is_loaded_to_memory_) {
+    Magick::Image image{getHeightMapPath()};
+    tex_w = image.columns(), tex_h = image.rows();
+    data_.resize(tex_w * tex_h);
+    image.write(0, 0, tex_w, tex_h, "R", MagickCore::ShortPixel, data_.data());
+
+    is_loaded_to_memory_ = true;
+  }
+}
+
+void CdlodQuadTreeNode::upload() {
+  if (!is_loaded_to_gpu_) {
+    gl::Bind(texture_);
+    texture_.upload(gl::kR16, tex_w, tex_h, gl::kRed,
+                    gl::kUnsignedShort, data_.data());
+
+    texture_.generateMipmap();
+    texture_.maxAnisotropy();
+    texture_.minFilter(gl::kLinearMipmapLinear);
+    texture_.magFilter(gl::kLinear);
+    texture_.wrapS(gl::kClampToEdge);
+    texture_.wrapT(gl::kClampToEdge);
+
+    texture_id_ = gl(GetTextureHandleARB(texture_.expose()));
+    gl(MakeTextureHandleResidentARB(texture_id_));
+    gl::Unbind(texture_);
+
+    double scale = (Settings::kTextureDimension+2.0*Settings::kTextureBorderSize)
+                   / Settings::kTextureDimension;
+    double s2 = scale * size()/2;
+    texture_info_ = glm::vec3(x_ - s2, z_ - s2, 2*s2);
+
+    is_loaded_to_gpu_ = true;
+  }
+}
+
 
 }  // namespace engine
 

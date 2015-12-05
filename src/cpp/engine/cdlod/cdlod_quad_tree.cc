@@ -14,8 +14,9 @@ CdlodQuadTree::CdlodQuadTree(size_t face_size, CubeFace face)
   : max_node_level_(log2(face_size) - Settings::node_dimension_exp)
   , root_(face_size/2, face_size/2, face, max_node_level_) {}
 
-void CdlodQuadTree::render(const engine::Camera& cam, QuadGridMesh& mesh) {
-  root_.selectNodes(cam.transform()->pos(), cam.frustum(), mesh);
+void CdlodQuadTree::render(const engine::Camera& cam, QuadGridMesh& mesh,
+                           ThreadPool& thread_pool) {
+  root_.selectNodes(cam.transform()->pos(), cam.frustum(), mesh, thread_pool);
   root_.age();
 }
 

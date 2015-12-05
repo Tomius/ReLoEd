@@ -16,6 +16,7 @@ CdlodTerrain::CdlodTerrain(engine::ShaderManager* manager)
         {Settings::face_size, CubeFace::kPosZ},
         {Settings::face_size, CubeFace::kNegZ}
       }
+    , thread_pool_{4}
 { }
 
 void CdlodTerrain::setup(const gl::Program& program) {
@@ -56,22 +57,17 @@ void CdlodTerrain::render(Camera const& cam) {
   uCamPos_->set(cam.transform()->pos());
 
   gl::FrontFace(gl::kCcw);
-  // if (!Settings::wire_frame) {
-    gl::Enable(gl::kCullFace);
-  // }
+  gl::TemporaryEnable cullface{gl::kCullFace};
 
+  thread_pool_.clear();
   engine::Settings::geom_nodes_count = 0;
   engine::Settings::texture_nodes_count = 0;
   for (int face = 0; face < 6; ++face) {
     mesh_.clearRenderList();
     gl::Uniform<int>(*program_, "Terrain_uFace") = face;
-    faces_[face].render(cam, mesh_);
+    faces_[face].render(cam, mesh_, thread_pool_);
     mesh_.render();
   }
-
-  // if (!Settings::wire_frame) {
-    gl::Disable(gl::kCullFace);
-  // }
 }
 
 }  // namespace engine
