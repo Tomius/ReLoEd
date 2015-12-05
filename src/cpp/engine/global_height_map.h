@@ -49,7 +49,7 @@ namespace Settings {
   static constexpr double height_scale = 5;
   static constexpr double max_height = height_scale * mt_everest_height;
 
-  extern bool wire_frame;
+  static constexpr bool wire_frame = false;
 
   // statistics
   extern size_t geom_nodes_count, texture_nodes_count;
