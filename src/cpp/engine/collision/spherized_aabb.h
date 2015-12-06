@@ -6,7 +6,7 @@
 #include "../misc.h"
 #include "./bounding_box.h"
 #include "./cube2sphere.h"
-#include "../global_height_map.h"
+#include "../settings.h"
 
 namespace engine {
 
@@ -29,13 +29,13 @@ class SpherizedAABB {
  public:
   SpherizedAABB() = default;
 
-  SpherizedAABB(const BoundingBox& bbox, CubeFace face, double face_size)
-      : aabb_ {Cube2Sphere(bbox, face, face_size)} {
+  SpherizedAABB(const BoundingBox& bbox, CubeFace face, double kFaceSize)
+      : aabb_ {Cube2Sphere(bbox, face, kFaceSize)} {
     using namespace glm;
 
     const glm::dvec3& mins = bbox.mins();
     const glm::dvec3& maxes = bbox.maxes();
-    double radius = Settings::sphere_radius;
+    double radius = Settings::kSphereRadius;
     radial_extent_ = {radius + mins.y, radius + maxes.y};
 
     /*
@@ -87,7 +87,7 @@ class SpherizedAABB {
 
     glm::dvec3 vertices[8];
     for (int i = 0; i < 8; ++i) {
-      vertices[i] = Cube2Sphere(m_vertices[i], face, face_size);;
+      vertices[i] = Cube2Sphere(m_vertices[i], face, kFaceSize);;
     }
 
     enum {
@@ -101,13 +101,13 @@ class SpherizedAABB {
     normals_[Left]  = GetNormal(vertices, H, G, F, G);
 
     extents_[Front] =
-      getExtent(normals_[Front], m_vertices[B], m_vertices[A], face, face_size);
+      getExtent(normals_[Front], m_vertices[B], m_vertices[A], face, kFaceSize);
     extents_[Right] =
-      getExtent(normals_[Right], m_vertices[A], m_vertices[E], face, face_size);
+      getExtent(normals_[Right], m_vertices[A], m_vertices[E], face, kFaceSize);
     extents_[Back]  =
-      getExtent(normals_[Back],  m_vertices[H], m_vertices[G], face, face_size);
+      getExtent(normals_[Back],  m_vertices[H], m_vertices[G], face, kFaceSize);
     extents_[Left]  =
-      getExtent(normals_[Left],  m_vertices[F], m_vertices[B], face, face_size);
+      getExtent(normals_[Left],  m_vertices[F], m_vertices[B], face, kFaceSize);
   }
 
   static glm::dvec3 GetNormal(glm::dvec3 vertices[], int a, int b, int c, int d) {
@@ -127,11 +127,11 @@ class SpherizedAABB {
   static Interval getExtent(const glm::dvec3& normal,
                             const glm::dvec3& m_space_min,
                             const glm::dvec3& m_space_max,
-                            CubeFace face, double face_size) {
+                            CubeFace face, double kFaceSize) {
     Interval interval;
     glm::dvec3 diff = m_space_max - m_space_min;
     for (int i = 0; i <= 4; ++i) {
-      glm::dvec3 current = Cube2Sphere(m_space_min + i/4.0*diff, face, face_size);
+      glm::dvec3 current = Cube2Sphere(m_space_min + i/4.0*diff, face, kFaceSize);
       double current_projection = dot(current, normal);
       if (i == 0) {
         interval.min = current_projection;

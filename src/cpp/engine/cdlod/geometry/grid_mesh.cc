@@ -1,7 +1,7 @@
 // Copyright (c) 2015, Tamas Csala
 
 #include "grid_mesh.h"
-#include "../../global_height_map.h"
+#include "../../settings.h"
 #include "../../oglwrap_all.h"
 
 #define gl(func) OGLWRAP_CHECKED_FUNCTION(func)
@@ -110,14 +110,14 @@ void GridMesh::render() {
   gl::PrimitiveRestartIndex(kPrimitiveRestart);
   gl::TemporaryEnable prim_restart(gl::kPrimitiveRestart);
 
-  if (Settings::wire_frame) {
+  if (Settings::kWireFrame) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
   }
   gl::DrawElementsInstanced(PrimType::kTriangleStrip,
                             index_count_,
                             IndexType::kUnsignedShort,
                             render_data_.size());   // instance count
-  if (Settings::wire_frame) {
+  if (Settings::kWireFrame) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   }
 

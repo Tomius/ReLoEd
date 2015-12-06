@@ -94,7 +94,7 @@ class FpsDisplay : public engine::Behaviour {
     double fps = accum_calls_ / accum_time_;
     size_t geom_nodes_count = engine::Settings::geom_nodes_count;
     size_t triangle_count = (geom_nodes_count
-          << (2*(engine::Settings::node_dimension_exp-1))) / 1000;
+          << (2*(engine::Settings::kNodeDimensionExp-1))) / 1000;
     size_t triangles_per_sec = triangle_count * fps / 1000;
     size_t gpu_mem_usage = engine::Settings::texture_nodes_count
                            *262*262*2/1024/1024;

@@ -2,7 +2,7 @@
 
 #include "./scattering.h"
 #include "engine/game_engine.h"
-#include "engine/global_height_map.h"
+#include "engine/settings.h"
 
 Scattering::Scattering(engine::GameObject* parent)
     : engine::Behaviour(parent)
@@ -18,10 +18,10 @@ Scattering::Scattering(engine::GameObject* parent)
   gl::UniformSampler(prog_, "uTex").set(0);
   gl::UniformSampler(prog_, "uDepthTex").set(1);
   gl::Uniform<glm::ivec2>(prog_, "uTexSize") =
-    glm::ivec2(engine::Settings::face_size,
-               engine::Settings::face_size);
+    glm::ivec2(engine::Settings::kFaceSize,
+               engine::Settings::kFaceSize);
   gl::Uniform<float>(prog_, "uRadius") =
-    engine::Settings::sphere_radius;
+    engine::Settings::kSphereRadius;
   (prog_ | "aPosition").bindLocation(rect_.kPosition);
   prog_.validate();
 
@@ -85,7 +85,7 @@ void Scattering::render2D() {
 
   gl::Use(prog_);
   prog_.update();
-  gl::Uniform<int>(prog_, "uWireFrame") = engine::Settings::wire_frame;
+  gl::Uniform<int>(prog_, "uWireFrame") = engine::Settings::kWireFrame;
 
   auto cam = scene_->camera();
   uCameraMatrix_ = glm::mat3(cam->cameraMatrix());

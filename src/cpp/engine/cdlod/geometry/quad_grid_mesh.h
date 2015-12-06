@@ -4,7 +4,7 @@
 #define ENGINE_CDLOD_QUAD_GRID_MESH_H_
 
 #include "grid_mesh.h"
-#include "../../global_height_map.h"
+#include "../../settings.h"
 
 namespace engine {
 
@@ -15,7 +15,7 @@ class QuadGridMesh {
  public:
   // Specify the size of the 4 subquads together, not the size of one subquad
   // It should be between 2 and 256, and should be a power of 2
-  QuadGridMesh(int dimension = Settings::node_dimension);
+  QuadGridMesh(int dimension = Settings::kNodeDimension);
 
   void setupPositions(gl::VertexAttrib attrib);
   void setupRenderData(gl::VertexAttrib attrib);

@@ -2,7 +2,7 @@
 
 #include "./skybox.h"
 #include "engine/game_engine.h"
-#include "engine/global_height_map.h"
+#include "engine/settings.h"
 
 const float day_duration = 256.0f, day_start = 0;
 

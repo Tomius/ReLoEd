@@ -6,7 +6,7 @@
 #include "./skybox.h"
 #include "./shadow.h"
 #include "engine/oglwrap_all.h"
-#include "engine/global_height_map.h"
+#include "engine/settings.h"
 #include "engine/game_object.h"
 #include "engine/shader_manager.h"
 #include "engine/cdlod/cdlod_terrain.h"

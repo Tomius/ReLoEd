@@ -25,7 +25,7 @@ class MainScene : public engine::Scene {
     auto skybox = addComponent<Skybox>();
     skybox->set_group(-1);
     addComponent<Terrain>();
-    int radius = engine::Settings::sphere_radius;
+    int radius = engine::Settings::kSphereRadius;
     tp_camera_ = addComponent<engine::ThirdPersonalCamera>(
         M_PI/3, 2, 3*radius, glm::vec3(-2*radius, 0, 0),
         5, 1, 0.005, 4, radius, radius);
@@ -41,7 +41,7 @@ class MainScene : public engine::Scene {
     engine::ThirdPersonalCamera* tp_camera_ = nullptr;
 
   virtual void keyAction(int key, int scancode, int action, int mods) override {
-    int radius = engine::Settings::sphere_radius;
+    int radius = engine::Settings::kSphereRadius;
     if (action == GLFW_PRESS) {
       if (key == GLFW_KEY_SPACE) {
         if (free_fly_camera_) {

@@ -7,7 +7,7 @@
 #include "geometry/quad_grid_mesh.h"
 #include "./cdlod_quad_tree_node.h"
 #include "../camera.h"
-#include "../global_height_map.h"
+#include "../settings.h"
 
 namespace engine {
 
@@ -16,7 +16,7 @@ class CdlodQuadTree {
   CdlodQuadTreeNode root_;
 
  public:
-  CdlodQuadTree(size_t face_size, CubeFace face);
+  CdlodQuadTree(size_t kFaceSize, CubeFace face);
   void render(const engine::Camera& cam, QuadGridMesh& mesh,
               ThreadPool& thread_pool);
   size_t max_node_level() const { return max_node_level_; }

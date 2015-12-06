@@ -1,7 +1,7 @@
 // Copyright (c) 2015, Tamas Csala
 
 #include "./cube2sphere.h"
-#include "../global_height_map.h"
+#include "../settings.h"
 
 namespace engine {
 
@@ -15,9 +15,9 @@ static glm::dvec3 Cubify(const glm::dvec3& p) {
 
 static glm::dvec3 FaceLocalToUnitCube(const glm::dvec3& pos,
                                       CubeFace face,
-                                      double face_size) {
+                                      double kFaceSize) {
   glm::dvec3 no_height = glm::dvec3(pos.x, 0, pos.z);
-  glm::dvec3 n = (no_height - face_size/2) / (face_size/2); // normalized to [-1, 1]
+  glm::dvec3 n = (no_height - kFaceSize/2) / (kFaceSize/2); // normalized to [-1, 1]
   switch (face) {
     case CubeFace::kPosX: return {+n.y, +n.z, -n.x}; break;
     case CubeFace::kNegX: return {-n.y, +n.z, +n.x}; break;
@@ -30,9 +30,9 @@ static glm::dvec3 FaceLocalToUnitCube(const glm::dvec3& pos,
 
 static BoundingBox FaceLocalToUnitCube(const BoundingBox& bbox,
                                        CubeFace face,
-                                       double face_size) {
-  glm::dvec3 a = FaceLocalToUnitCube(bbox.mins(), face, face_size);
-  glm::dvec3 b = FaceLocalToUnitCube(bbox.maxes(), face, face_size);
+                                       double kFaceSize) {
+  glm::dvec3 a = FaceLocalToUnitCube(bbox.mins(), face, kFaceSize);
+  glm::dvec3 b = FaceLocalToUnitCube(bbox.maxes(), face, kFaceSize);
   // values might change sign in the mapping
   return BoundingBox{glm::min(a, b), glm::max(a, b)};
 }
@@ -41,17 +41,17 @@ static BoundingBox FaceLocalToUnitCube(const BoundingBox& bbox,
 
 glm::dvec3 engine::Cube2Sphere(const glm::dvec3& pos,
                                CubeFace face,
-                               double face_size) {
-  glm::dvec3 pos_on_cube = FaceLocalToUnitCube(pos, face, face_size);
-  return (Settings::sphere_radius + pos.y) * Cubify(pos_on_cube);
+                               double kFaceSize) {
+  glm::dvec3 pos_on_cube = FaceLocalToUnitCube(pos, face, kFaceSize);
+  return (Settings::kSphereRadius + pos.y) * Cubify(pos_on_cube);
 }
 
 engine::BoundingBox engine::Cube2Sphere(const engine::BoundingBox& bbox,
-                                        CubeFace face, double face_size) {
+                                        CubeFace face, double kFaceSize) {
   using namespace glm;
 
   // bbox_on_cube
-  BoundingBox bbox_on_cube = FaceLocalToUnitCube(bbox, face, face_size);
+  BoundingBox bbox_on_cube = FaceLocalToUnitCube(bbox, face, kFaceSize);
   dvec3 bocmin = bbox_on_cube.mins(), bocmax = bbox_on_cube.maxes();
 
   dvec3 mins = dvec3(-bocmax.x, -bocmax.y, +bocmin.z);
@@ -85,8 +85,8 @@ engine::BoundingBox engine::Cube2Sphere(const engine::BoundingBox& bbox,
   b = maxes * sqrt_max;
   dvec3 max_on_unit_sphere = glm::max(a, b);
 
-  double min_radius = Settings::sphere_radius + bbox.mins().y;
-  double max_radius = Settings::sphere_radius + bbox.maxes().y;
+  double min_radius = Settings::kSphereRadius + bbox.mins().y;
+  double max_radius = Settings::kSphereRadius + bbox.maxes().y;
 
   return {
     glm::min(min_radius * min_on_unit_sphere, max_radius * min_on_unit_sphere),

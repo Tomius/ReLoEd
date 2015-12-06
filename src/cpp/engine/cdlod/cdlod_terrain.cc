@@ -9,12 +9,12 @@ namespace engine {
 
 CdlodTerrain::CdlodTerrain(engine::ShaderManager* manager)
     : faces_{
-        {Settings::face_size, CubeFace::kPosX},
-        {Settings::face_size, CubeFace::kNegX},
-        {Settings::face_size, CubeFace::kPosY},
-        {Settings::face_size, CubeFace::kNegY},
-        {Settings::face_size, CubeFace::kPosZ},
-        {Settings::face_size, CubeFace::kNegZ}
+        {Settings::kFaceSize, CubeFace::kPosX},
+        {Settings::kFaceSize, CubeFace::kNegX},
+        {Settings::kFaceSize, CubeFace::kPosY},
+        {Settings::kFaceSize, CubeFace::kNegY},
+        {Settings::kFaceSize, CubeFace::kPosZ},
+        {Settings::kFaceSize, CubeFace::kNegZ}
       }
     , thread_pool_{4}
 { }
@@ -33,16 +33,16 @@ void CdlodTerrain::setup(const gl::Program& program) {
       program, "Terrain_uCamPos");
 
   gl::Uniform<int>(program, "Terrain_uMaxHeight") =
-      Settings::max_height;
+      Settings::kMaxHeight;
 
   gl::Uniform<glm::ivec2>(program, "Terrain_uTexSize") =
-      glm::ivec2(Settings::face_size, Settings::face_size);
+      glm::ivec2(Settings::kFaceSize, Settings::kFaceSize);
 
   gl::Uniform<float>(program, "Terrain_uNodeDimension") =
-      Settings::node_dimension;
+      Settings::kNodeDimension;
 
   gl::Uniform<float>(program, "Terrain_uLodLevelDistanceMultiplier") =
-      Settings::lod_level_distance_multiplier;
+      Settings::kLodLevelDistanceMultiplier;
 
   gl::Uniform<int>(program, "Terrain_uMaxLoadLevel") =
       faces_[0].max_node_level();

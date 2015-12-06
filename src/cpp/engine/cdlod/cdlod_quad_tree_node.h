@@ -5,7 +5,7 @@
 
 #include <memory>
 #include "geometry/quad_grid_mesh.h"
-#include "../global_height_map.h"
+#include "../settings.h"
 #include "../collision/spherized_aabb.h"
 #include "../thread_pool.h"
 
@@ -16,7 +16,7 @@ class CdlodQuadTreeNode {
   CdlodQuadTreeNode(double x, double z, CubeFace face, int level);
 
   double scale() const { return pow(2, level_); }
-  double size() { return Settings::node_dimension * scale(); }
+  double size() { return Settings::kNodeDimension * scale(); }
 
   bool collidesWithSphere(const Sphere& sphere) const {
     return bbox_.collidesWithSphere(sphere);

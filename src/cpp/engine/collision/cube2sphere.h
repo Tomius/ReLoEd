@@ -14,8 +14,8 @@ enum class CubeFace {
   kPosX, kNegX, kPosY, kNegY, kPosZ, kNegZ
 };
 
-glm::dvec3 Cube2Sphere(const glm::dvec3& pos, CubeFace face, double face_size);
-BoundingBox Cube2Sphere(const BoundingBox& bbox, CubeFace face, double face_size);
+glm::dvec3 Cube2Sphere(const glm::dvec3& pos, CubeFace face, double kFaceSize);
+BoundingBox Cube2Sphere(const BoundingBox& bbox, CubeFace face, double kFaceSize);
 
 }
 

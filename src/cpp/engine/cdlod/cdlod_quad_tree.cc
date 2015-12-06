@@ -6,13 +6,13 @@
 #include "geometry/quad_grid_mesh.h"
 #include "./cdlod_quad_tree_node.h"
 #include "../camera.h"
-#include "../global_height_map.h"
+#include "../settings.h"
 
 namespace engine {
 
-CdlodQuadTree::CdlodQuadTree(size_t face_size, CubeFace face)
-  : max_node_level_(log2(face_size) - Settings::node_dimension_exp)
-  , root_(face_size/2, face_size/2, face, max_node_level_) {}
+CdlodQuadTree::CdlodQuadTree(size_t kFaceSize, CubeFace face)
+  : max_node_level_(log2(kFaceSize) - Settings::kNodeDimensionExp)
+  , root_(kFaceSize/2, kFaceSize/2, face, max_node_level_) {}
 
 void CdlodQuadTree::render(const engine::Camera& cam, QuadGridMesh& mesh,
                            ThreadPool& thread_pool) {

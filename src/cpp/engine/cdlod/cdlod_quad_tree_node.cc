@@ -14,8 +14,8 @@ CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z,
     : x_(x), z_(z), face_(face), level_(level) {
   bbox_ = SpherizedAABB{BoundingBox{
     {x-size()/2, 0, z-size()/2},
-    {x+size()/2, Settings::max_height, z+size()/2}
-  }, face, Settings::face_size};
+    {x+size()/2, Settings::kMaxHeight, z+size()/2}
+  }, face, Settings::kFaceSize};
 }
 
 void CdlodQuadTreeNode::initChild(int i) {
@@ -42,12 +42,12 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
   if (!bbox_.collidesWithFrustum(frustum)) { return; }
 
   last_used_ = 0;
-  float lod_range = Settings::lod_level_distance_multiplier * size();
+  float lod_range = Settings::kLodLevelDistanceMultiplier * size();
   selectTexture(cam_pos, frustum, thread_pool, texture_id, texture_info);
 
   // If we can cover the whole area or if we are a leaf
   Sphere sphere{cam_pos, lod_range};
-  if (!bbox_.collidesWithSphere(sphere) || level_ <= -Settings::geom_div) {
+  if (!bbox_.collidesWithSphere(sphere) || level_ <= -Settings::kGeomDiv) {
     grid_mesh.addToRenderList(x_, z_, scale(), level_, texture_id, texture_info);
   } else {
     bool cc[4]{}; // children collision
@@ -120,7 +120,7 @@ std::string CdlodQuadTreeNode::getHeightMapPath() const {
 }
 
 int CdlodQuadTreeNode::textureLevel() const {
-  return std::max(level_ - (Settings::kTextureDimensionExp - Settings::node_dimension_exp), 0);
+  return std::max(level_ - (Settings::kTextureDimensionExp - Settings::kNodeDimensionExp), 0);
 }
 
 void CdlodQuadTreeNode::loadTexture() {
