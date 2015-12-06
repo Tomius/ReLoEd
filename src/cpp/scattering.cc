@@ -82,10 +82,8 @@ void Scattering::render2D() {
   color_tex_.generateMipmap();
   gl::BindToTexUnit(depth_tex_, 1);
 
-
   gl::Use(prog_);
   prog_.update();
-  gl::Uniform<int>(prog_, "uWireFrame") = engine::Settings::kWireFrame;
 
   auto cam = scene_->camera();
   uCameraMatrix_ = glm::mat3(cam->cameraMatrix());

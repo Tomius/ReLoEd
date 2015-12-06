@@ -116,7 +116,7 @@ vec4 textureBicubic(sampler2D tex, vec2 texCoords){
 }
 
 float Terrain_getHeight(vec2 pos) {
-  vec2 sample = (pos - Terrain_aTextureInfo.xy) / Terrain_aTextureInfo.z;
+  vec2 sample = (pos - Terrain_aTextureInfo.xy + 1) / Terrain_aTextureInfo.z;
   float normalized_height = textureBicubic(sampler2D(Terrain_aTextureId), sample).r;
   return normalized_height * Terrain_uMaxHeight;
 }

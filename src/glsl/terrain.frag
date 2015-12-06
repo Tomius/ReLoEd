@@ -63,7 +63,7 @@ vec4 textureBicubic(sampler2D tex, vec2 texCoords){
 }
 
 float GetHeight(vec2 pos) {
-  vec2 sample = (pos - vIn.texInfo.xy) / vIn.texInfo.z;
+  vec2 sample = (pos - vIn.texInfo.xy + 1) / vIn.texInfo.z;
   return textureBicubic(sampler2D(vIn.texId), sample).r;
 }
 
