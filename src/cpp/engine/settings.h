@@ -22,14 +22,12 @@ namespace Settings {
 
   static constexpr int kTextureBorderSize = 3;
 
-  // The size of sphere for a CDLOD level is node size * this
-  // It should be at least 2, but making it bigger makes distant
-  // parts of the terrain appear with more detail.
-  static constexpr double kLodLevelDistanceMultiplier = 2.0;
-  static_assert(1 <= kLodLevelDistanceMultiplier, "");
+  static constexpr double kSmallestGeometryLodDistance = 2.0 * kNodeDimension;
+  static_assert(kNodeDimension <= kSmallestGeometryLodDistance, "");
 
-  static constexpr double kTextureLevelDistanceMultiplier = 4.0;
-  static_assert(1 <= kTextureLevelDistanceMultiplier, "");
+  static constexpr double kSmallestTextureLodDistance = kTextureDimension;
+  static_assert(kTextureDimension <= kSmallestTextureLodDistance, "");
+  static_assert(kSmallestGeometryLodDistance <= kSmallestTextureLodDistance, "");
 
   // Geometry subdivision. This practially contols zooming into the heightmap.
   // If for ex. this is three, that means that a 8x8 geometry (9x9 vertices)

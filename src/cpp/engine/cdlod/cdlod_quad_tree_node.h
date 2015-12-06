@@ -13,7 +13,8 @@ namespace engine {
 
 class CdlodQuadTreeNode {
  public:
-  CdlodQuadTreeNode(double x, double z, CubeFace face, int level);
+  CdlodQuadTreeNode(double x, double z, CubeFace face, int level,
+                    CdlodQuadTreeNode* parent = nullptr);
 
   double scale() const { return pow(2, level_); }
   double size() { return Settings::kNodeDimension * scale(); }
@@ -41,6 +42,7 @@ class CdlodQuadTreeNode {
   CubeFace face_;
   int level_;
   SpherizedAABB bbox_;
+  CdlodQuadTreeNode* parent_;
   std::unique_ptr<CdlodQuadTreeNode> children_[4];
   int last_used_ = 0;
 

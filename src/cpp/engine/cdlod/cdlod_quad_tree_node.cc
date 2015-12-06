@@ -9,9 +9,9 @@
 
 namespace engine {
 
-CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z,
-                                     CubeFace face, int level)
-    : x_(x), z_(z), face_(face), level_(level) {
+CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z, CubeFace face,
+                                     int level, CdlodQuadTreeNode* parent)
+    : x_(x), z_(z), face_(face), level_(level), parent_(parent) {
   bbox_ = SpherizedAABB{BoundingBox{
     {x-size()/2, 0, z-size()/2},
     {x+size()/2, Settings::kMaxHeight, z+size()/2}
@@ -21,28 +21,33 @@ CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z,
 void CdlodQuadTreeNode::initChild(int i) {
   assert (0 <= i && i <= 3);
 
-  double s4 = size()/4;
+  double s4 = size()/4, x, z;
   if (i == 0) {
-    children_[0] = make_unique<CdlodQuadTreeNode>(x_-s4, z_+s4, face_, level_-1);
+    x = x_-s4; z = z_+s4;
   } else if (i == 1) {
-    children_[1] = make_unique<CdlodQuadTreeNode>(x_+s4, z_+s4, face_, level_-1);
+    x = x_+s4; z = z_+s4;
   } else if (i == 2) {
-    children_[2] = make_unique<CdlodQuadTreeNode>(x_-s4, z_-s4, face_, level_-1);
+    x = x_-s4; z = z_-s4;
   } else if (i == 3) {
-    children_[3] = make_unique<CdlodQuadTreeNode>(x_+s4, z_-s4, face_, level_-1);
+    x = x_+s4; z = z_-s4;
   }
+
+  children_[i] = make_unique<CdlodQuadTreeNode>(x, z, face_, level_-1, parent_);
 }
 
 void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
                                     const Frustum& frustum,
                                     QuadGridMesh& grid_mesh,
                                     ThreadPool& thread_pool,
-                                    uint64_t texture_id /*= 0*/,
-                                    glm::vec3 texture_info /*= glm::vec3{}*/) {
+                                    uint64_t texture_id,
+                                    glm::vec3 texture_info) {
   if (!bbox_.collidesWithFrustum(frustum)) { return; }
 
   last_used_ = 0;
-  float lod_range = Settings::kLodLevelDistanceMultiplier * size();
+  float lod_range = Settings::kSmallestGeometryLodDistance * scale();
+
+  // uint64_t texture_id;
+  // glm::vec3 texture_info;
   selectTexture(cam_pos, frustum, thread_pool, texture_id, texture_info);
 
   // If we can cover the whole area or if we are a leaf
@@ -155,8 +160,8 @@ void CdlodQuadTreeNode::upload() {
 
     double scale = (Settings::kTextureDimension+2.0*Settings::kTextureBorderSize)
                    / Settings::kTextureDimension;
-    double s2 = scale * size()/2;
-    texture_info_ = glm::vec3(x_ - s2, z_ - s2, 2*s2);
+    double scaled_size = scale * size();
+    texture_info_ = glm::vec3(x_ - scaled_size/2, z_ - scaled_size/2, scaled_size);
 
     is_loaded_to_gpu_ = true;
   }

@@ -15,7 +15,7 @@ uniform int Terrain_uMaxLoadLevel;
 uniform ivec2 Terrain_uTexSize;
 uniform vec3 Terrain_uCamPos;
 uniform float Terrain_uNodeDimension;
-uniform float Terrain_uLodLevelDistanceMultiplier;
+uniform float Terrain_uSmallestGeometryLodDistance;
 int Terrain_uNodeDimensionExp = int(round(log2(Terrain_uNodeDimension)));
 
 uniform int Terrain_uMaxHeight;
@@ -131,9 +131,8 @@ vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal) {
 
   if (level < Terrain_uMaxLoadLevel) {
     float dist = Terrain_estimateDistance(pos);
-    float next_level_size = pow(2, level+1)
-                            * Terrain_uLodLevelDistanceMultiplier
-                            * Terrain_uNodeDimension;
+    float next_level_size =
+        pow(2, level+1) * Terrain_uSmallestGeometryLodDistance;
     float max_dist = morph_end * next_level_size;
     float start_dist = morph_start * next_level_size;
     morph = smoothstep(start_dist, max_dist, dist);
@@ -143,8 +142,8 @@ vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal) {
     dist = Terrain_estimateDistance(pos);
 
     while (level + iteration_count < Terrain_uMaxLoadLevel &&
-           dist > 1.5*next_level_size &&
-           (iteration_count+1 < Terrain_uNodeDimensionExp)) {
+           1.5*next_level_size < dist &&
+           iteration_count+1 < Terrain_uNodeDimensionExp) {
       scale *= 2;
       next_level_size *= 2;
       iteration_count += 1;

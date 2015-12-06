@@ -41,8 +41,8 @@ void CdlodTerrain::setup(const gl::Program& program) {
   gl::Uniform<float>(program, "Terrain_uNodeDimension") =
       Settings::kNodeDimension;
 
-  gl::Uniform<float>(program, "Terrain_uLodLevelDistanceMultiplier") =
-      Settings::kLodLevelDistanceMultiplier;
+  gl::Uniform<float>(program, "Terrain_uSmallestGeometryLodDistance") =
+      Settings::kSmallestGeometryLodDistance;
 
   gl::Uniform<int>(program, "Terrain_uMaxLoadLevel") =
       faces_[0].max_node_level();
