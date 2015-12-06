@@ -31,11 +31,11 @@ float MAX = 10.0 * R;
 float SCALE_H = 8.0 / (R - R_INNER);
 float SCALE_L = 0.35 / (R - R_INNER);
 
-const int NUM_OUT_SCATTER = 5;
-const float FNUM_OUT_SCATTER = 5.0;
+const int NUM_OUT_SCATTER = 3;
+const float FNUM_OUT_SCATTER = 3.0;
 
-const int NUM_IN_SCATTER = 5;
-const float FNUM_IN_SCATTER = 5.0;
+const int NUM_IN_SCATTER = 4;
+const float FNUM_IN_SCATTER = 4.0;
 
 // ray direction
 vec3 ray_dir(float fov, vec2 size, vec2 pos) {

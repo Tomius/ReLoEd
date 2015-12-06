@@ -6,8 +6,12 @@
 
 in vec2 Terrain_aPosition;
 in vec4 Terrain_aRenderData;
-in uvec2 Terrain_aTextureId;
-in vec3 Terrain_aTextureInfo;
+
+in uvec2 Terrain_aCurrentNormalTextureId;
+in vec3 Terrain_aCurrentNormalTexturePosAndSize;
+
+in uvec2 Terrain_aNextNormalTextureId;
+in vec3 Terrain_aNextNormalTexturePosAndSize;
 
 uniform float uDepthCoef;
 uniform mat4 uProjectionMatrix, uCameraMatrix, uModelMatrix;
@@ -18,8 +22,8 @@ out VertexData {
   vec2  texCoord;
   float level, morph;
   vec4 render_data;
-  flat uvec2 texId;
-  flat vec3 texInfo;
+  flat uvec2 current_tex_id, next_tex_id;
+  flat vec3 current_tex_pos_and_size, next_tex_pos_and_size;
 } vOut;
 
 void main() {
@@ -44,8 +48,10 @@ void main() {
 
   vOut.level = Terrain_aRenderData.w;
   vOut.render_data = Terrain_aRenderData;
-  vOut.texId = Terrain_aTextureId;
-  vOut.texInfo = Terrain_aTextureInfo;
+  vOut.current_tex_id = Terrain_aCurrentNormalTextureId;
+  vOut.current_tex_pos_and_size = Terrain_aCurrentNormalTexturePosAndSize;
+  vOut.next_tex_id = Terrain_aNextNormalTextureId;
+  vOut.next_tex_pos_and_size = Terrain_aNextNormalTexturePosAndSize;
 
   vec4 projected = uProjectionMatrix * c_pos;
   projected.z = log2(max(1e-6, 1.0 + projected.w)) * uDepthCoef - 1.0;

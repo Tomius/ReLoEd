@@ -14,14 +14,19 @@ in VertexData {
   vec2  texCoord;
   float level, morph;
   vec4 render_data;
-  flat uvec2 texId;
-  flat vec3 texInfo;
+  flat uvec2 current_tex_id, next_tex_id;
+  flat vec3 current_tex_pos_and_size, next_tex_pos_and_size;
 } vIn;
 
 uniform int Terrain_uFace;
 uniform int Terrain_uMaxHeight;
+uniform int Terrain_uTextureDimension;
+uniform int Terrain_uTextureDimensionWBorders;
 uniform ivec2 Terrain_uTexSize;
+uniform float Terrain_uSmallestTextureLodDistance;
 float Terrain_radius = Terrain_uTexSize.x / 2;
+
+const float kMorphEnd = 0.95, kMorphStart = 0.85;
 
 vec4 cubic(float v){
   vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
@@ -62,20 +67,39 @@ vec4 textureBicubic(sampler2D tex, vec2 texCoords){
   return mix(mix(sample3, sample2, sx), mix(sample1, sample0, sx), sy);
 }
 
-float GetHeight(vec2 pos) {
-  vec2 sample = (pos - vIn.texInfo.xy + 1) / vIn.texInfo.z;
-  return textureBicubic(sampler2D(vIn.texId), sample).r;
+float GetHeight(vec2 pos, uvec2 tex_id, vec3 tex_pos_and_size) {
+  vec2 sample = (pos - tex_pos_and_size.xy) / tex_pos_and_size.z;
+  sample += 0.5 / Terrain_uTextureDimensionWBorders;
+  return textureBicubic(sampler2D(tex_id), sample).r * Terrain_uMaxHeight;
 }
 
-vec3 GetNormalModelSpace(vec2 pos) {
-  float diff = vIn.texInfo.z / 262;
-  float py = GetHeight(vec2(pos.x, pos.y + diff)) * Terrain_uMaxHeight;
-  float my = GetHeight(vec2(pos.x, pos.y - diff)) * Terrain_uMaxHeight;
-  float px = GetHeight(vec2(pos.x + diff, pos.y)) * Terrain_uMaxHeight;
-  float mx = GetHeight(vec2(pos.x - diff, pos.y)) * Terrain_uMaxHeight;
+vec3 GetNormalModelSpaceInternal(vec2 pos, uvec2 tex_id, vec3 tex_pos_and_size) {
+  float diff = tex_pos_and_size.z / Terrain_uTextureDimensionWBorders;
+  float py = GetHeight(vec2(pos.x, pos.y + diff), tex_id, tex_pos_and_size);
+  float my = GetHeight(vec2(pos.x, pos.y - diff), tex_id, tex_pos_and_size);
+  float px = GetHeight(vec2(pos.x + diff, pos.y), tex_id, tex_pos_and_size);
+  float mx = GetHeight(vec2(pos.x - diff, pos.y), tex_id, tex_pos_and_size);
 
   return normalize(vec3(px-mx, diff, py-my));
 }
+
+vec3 GetNormalModelSpace(vec2 pos) {
+  float dist = length(vIn.c_pos);
+  float next_dist = vIn.next_tex_pos_and_size.z
+      / Terrain_uTextureDimension * Terrain_uSmallestTextureLodDistance;
+  float morph = smoothstep(kMorphStart*next_dist, kMorphEnd*next_dist, dist);
+  vec3 normal0 = GetNormalModelSpaceInternal(pos, vIn.current_tex_id,
+                                              vIn.current_tex_pos_and_size);
+  if (morph == 0.0) {
+    return normal0;
+  }
+
+  vec3 normal1 = GetNormalModelSpaceInternal(pos, vIn.next_tex_id,
+                                             vIn.next_tex_pos_and_size);
+
+  return mix(normal0, normal1, morph);
+}
+
 
 #define kPosX 0
 #define kNegX 1
@@ -116,15 +140,15 @@ vec3 GetNormal(vec2 pos) {
 }
 
 void main() {
-  float height = GetHeight(vIn.m_pos.xz);
-  float luminance = 0.2 + 0.8*max(dot(GetNormal(vIn.m_pos.xz), SunPos()), 0);
+  float lighting = dot(GetNormal(vIn.m_pos.xz), SunPos());
+  float luminance = 0.2 + 0.6*max(lighting, 0) + 0.2 * (1+lighting)/2;
   vec3 diffuse = vec3(0.0);
   if (Terrain_uFace/2 == 0) {
-    diffuse = vec3(1, 0.75, 0.75);
+    diffuse = vec3(1, 0.9, 0.9);
   } else if (Terrain_uFace/2 == 1) {
-    diffuse = vec3(0.75, 1, 0.75);
+    diffuse = vec3(0.9, 1, 0.9);
   } else if (Terrain_uFace/2 == 2) {
-    diffuse = vec3(0.75, 0.75, 1);
+    diffuse = vec3(0.9, 0.9, 1);
   }
   fragColor = vec4(luminance*diffuse, 1);
   fragDepth = length(vIn.c_pos);

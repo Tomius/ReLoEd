@@ -60,7 +60,7 @@ class MainScene : public engine::Scene {
           set_camera(tp_camera_);
         } else {
           free_fly_camera_ = addComponent<engine::FreeFlyCamera>(
-            M_PI/3, 2, 3*radius, tp_camera_->transform()->pos(), glm::vec3(), 50, 5);
+            M_PI/3, 2, 3*radius, tp_camera_->transform()->pos(), glm::vec3(), 10, 5);
           glm::vec3 up{glm::normalize(free_fly_camera_->transform()->pos())};
           free_fly_camera_->transform()->set_forward(-up + glm::vec3{0, 0.25, 0});
           free_fly_camera_->transform()->set_up(up);

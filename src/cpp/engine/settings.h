@@ -9,11 +9,11 @@
 namespace engine {
 
 namespace Settings {
-  static constexpr int kLevelOffset = 0;
+  static constexpr int kLevelOffset = 1;
 
   // CDLOD nodes' extent is (1 << kNodeDimensionExp)
-  static constexpr int kNodeDimensionExp = 4;
-  static_assert(4 <= kNodeDimensionExp && kNodeDimensionExp <= 8, "");
+  static constexpr int kNodeDimensionExp = 5;
+  static_assert(3 <= kNodeDimensionExp && kNodeDimensionExp <= 8, "");
 
   static constexpr int kNodeDimension = 1 << kNodeDimensionExp;
 
@@ -22,20 +22,22 @@ namespace Settings {
 
   static constexpr int kTextureBorderSize = 3;
 
-  static constexpr double kSmallestGeometryLodDistance = 2.0 * kNodeDimension;
+  static constexpr double kSmallestGeometryLodDistance = 2*kNodeDimension;
   static_assert(kNodeDimension <= kSmallestGeometryLodDistance, "");
 
-  static constexpr double kSmallestTextureLodDistance = kTextureDimension;
+  static constexpr int kTextureLodOffset = 0;
+  static_assert(kTextureLodOffset+kNodeDimensionExp <= kTextureDimensionExp, "");
+
+  static constexpr double kSmallestTextureLodDistance =
+    kSmallestGeometryLodDistance * (1 << (kTextureDimensionExp-kNodeDimensionExp-kTextureLodOffset));
   static_assert(kTextureDimension <= kSmallestTextureLodDistance, "");
   static_assert(kSmallestGeometryLodDistance <= kSmallestTextureLodDistance, "");
 
   // Geometry subdivision. This practially contols zooming into the heightmap.
   // If for ex. this is three, that means that a 8x8 geometry (9x9 vertices)
   // corresponds to a 1x1 texture area (2x2 texels)
-  static constexpr long kGeomDivBase = 2;
-  static_assert(kGeomDivBase <= 2*kNodeDimensionExp, "");
-
-  static constexpr long kGeomDiv = kGeomDivBase - kLevelOffset;
+  static constexpr long kGeomDiv = 2;
+  static_assert(kGeomDiv <= 2*kNodeDimensionExp, "");
 
   // The resolution of the heightmap
   static constexpr long kFaceSize = 65536;

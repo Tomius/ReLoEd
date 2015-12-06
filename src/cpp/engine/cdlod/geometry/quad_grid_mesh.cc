@@ -16,46 +16,60 @@ void QuadGridMesh::setupRenderData(gl::VertexAttrib attrib) {
   mesh_.setupRenderData(attrib);
 }
 
-void QuadGridMesh::setupTextureIds(gl::VertexAttrib attrib) {
-  mesh_.setupTextureIds(attrib);
+void QuadGridMesh::setupCurrentGeometryTextureIds(gl::VertexAttrib attrib) {
+  mesh_.setupCurrentGeometryTextureIds(attrib);
+}
+void QuadGridMesh::setupCurrentGeometryTexturePosAndSize(gl::VertexAttrib attrib) {
+  mesh_.setupCurrentGeometryTexturePosAndSize(attrib);
+}
+void QuadGridMesh::setupNextGeometryTextureIds(gl::VertexAttrib attrib) {
+  mesh_.setupNextGeometryTextureIds(attrib);
+}
+void QuadGridMesh::setupNextGeometryTexturePosAndSize(gl::VertexAttrib attrib) {
+  mesh_.setupNextGeometryTexturePosAndSize(attrib);
 }
 
-void QuadGridMesh::setupTextureInfo(gl::VertexAttrib attrib) {
-  mesh_.setupTextureInfo(attrib);
+void QuadGridMesh::setupCurrentNormalTextureIds(gl::VertexAttrib attrib) {
+  mesh_.setupCurrentNormalTextureIds(attrib);
+}
+void QuadGridMesh::setupCurrentNormalTexturePosAndSize(gl::VertexAttrib attrib) {
+  mesh_.setupCurrentNormalTexturePosAndSize(attrib);
+}
+void QuadGridMesh::setupNextNormalTextureIds(gl::VertexAttrib attrib) {
+  mesh_.setupNextNormalTextureIds(attrib);
+}
+void QuadGridMesh::setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib) {
+  mesh_.setupNextNormalTexturePosAndSize(attrib);
 }
 
 // Adds a subquad to the render list.
 // tl = top left, br = bottom right
 void QuadGridMesh::addToRenderList(float offset_x, float offset_y,
-                                   float scale, float level, uint64_t texture,
-                                   const glm::vec3& texture_info,
+                                   float scale, float level,
+                                   const StreamedTextureInfo& texinfo,
                                    bool tl, bool tr, bool bl, bool br) {
   glm::vec4 render_data(offset_x, offset_y, scale, level);
   float dim4 = scale * mesh_.dimension()/2; // our dimension / 4
   if (tl) {
-    mesh_.addToRenderList(render_data + glm::vec4(-dim4, dim4, 0, 0),
-                          texture, texture_info);
+    mesh_.addToRenderList(render_data + glm::vec4(-dim4, dim4, 0, 0), texinfo);
   }
   if (tr) {
-    mesh_.addToRenderList(render_data + glm::vec4(dim4, dim4, 0, 0),
-                          texture, texture_info);
+    mesh_.addToRenderList(render_data + glm::vec4(dim4, dim4, 0, 0), texinfo);
   }
   if (bl) {
-    mesh_.addToRenderList(render_data + glm::vec4(-dim4, -dim4, 0, 0),
-                          texture, texture_info);
+    mesh_.addToRenderList(render_data + glm::vec4(-dim4, -dim4, 0, 0), texinfo);
   }
   if (br) {
-    mesh_.addToRenderList(render_data + glm::vec4(dim4, -dim4, 0, 0),
-                          texture, texture_info);
+    mesh_.addToRenderList(render_data + glm::vec4(dim4, -dim4, 0, 0), texinfo);
   }
 }
 
 // Adds all four subquads
-void QuadGridMesh::addToRenderList(float offset_x, float offset_y, float scale,
-                                   float level, uint64_t texture,
-                                   const glm::vec3& texture_info) {
+void QuadGridMesh::addToRenderList(float offset_x, float offset_y,
+                                   float scale, float level,
+                                   const StreamedTextureInfo& texinfo) {
   addToRenderList(offset_x, offset_y, scale, level,
-                  texture, texture_info, true, true, true, true);
+                  texinfo, true, true, true, true);
 }
 
 void QuadGridMesh::clearRenderList() {

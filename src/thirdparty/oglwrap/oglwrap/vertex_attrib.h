@@ -109,9 +109,9 @@ class VertexAttribObject {
    * @see glVertexAttribPointer, glVertexAttribIPointer, glVertexAttribLPointer
    */
   VertexAttribObject& setup(GLuint values_per_vertex,
-                                DataType type,
-                                GLsizei stride = 0,
-                                const void *offset_pointer = nullptr) {
+                            DataType type,
+                            GLsizei stride = 0,
+                            const void *offset_pointer = nullptr) {
     switch (type) {
       case DataType::kFloat:
       case DataType::kHalfFloat:

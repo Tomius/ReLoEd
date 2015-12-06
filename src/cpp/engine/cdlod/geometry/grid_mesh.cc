@@ -5,7 +5,6 @@
 #include "../../oglwrap_all.h"
 
 #define gl(func) OGLWRAP_CHECKED_FUNCTION(func)
-#define UNSIGNED_INT64_ARB 0x140F
 
 namespace engine {
 
@@ -60,37 +59,79 @@ void GridMesh::setupRenderData(gl::VertexAttrib attrib) {
   gl::Unbind(vao_);
 }
 
-void GridMesh::setupTextureIds(gl::VertexAttrib attrib) {
+void GridMesh::setupTextureIds(gl::VertexAttrib attrib, int offset) {
   gl::Bind(vao_);
   gl::Bind(aTextureIds_);
-  attrib.setup<glm::uvec2>().enable();
-  // gl(VertexAttribLPointer(aTextureIds_.expose(), 1, UNSIGNED_INT64_ARB, 0, nullptr));
+  attrib.ipointer(2, gl::kUnsignedInt, 4*sizeof(glm::uvec2),
+                  reinterpret_cast<const char *>(offset*sizeof(glm::uvec2)));
+  attrib.divisor(1);
   attrib.enable();
-  attrib.divisor(1);
   gl::Unbind(vao_);
 }
 
-void GridMesh::setupTextureInfo(gl::VertexAttrib attrib) {
+void GridMesh::setupTexturePosAndSize(gl::VertexAttrib attrib, int offset) {
   gl::Bind(vao_);
-  gl::Bind(aTextureInfo_);
-  attrib.setup<glm::vec3>().enable();
+  gl::Bind(aTexturePosAndSize_);
+  attrib.pointer(3, gl::kFloat, false, 4*sizeof(glm::vec3),
+                 reinterpret_cast<const char *>(offset*sizeof(glm::vec3)));
   attrib.divisor(1);
+  attrib.enable();
   gl::Unbind(vao_);
 }
 
-void GridMesh::addToRenderList(const glm::vec4& render_data, uint64_t texture,
-                               const glm::vec3& texture_info) {
+void GridMesh::setupCurrentGeometryTextureIds(gl::VertexAttrib attrib) {
+  setupTextureIds(attrib, 0);
+}
+void GridMesh::setupCurrentGeometryTexturePosAndSize(gl::VertexAttrib attrib) {
+  setupTexturePosAndSize(attrib, 0);
+}
+
+void GridMesh::setupNextGeometryTextureIds(gl::VertexAttrib attrib) {
+  setupTextureIds(attrib, 1);
+}
+void GridMesh::setupNextGeometryTexturePosAndSize(gl::VertexAttrib attrib) {
+  setupTexturePosAndSize(attrib, 1);
+}
+
+void GridMesh::setupCurrentNormalTextureIds(gl::VertexAttrib attrib) {
+  setupTextureIds(attrib, 2);
+}
+void GridMesh::setupCurrentNormalTexturePosAndSize(gl::VertexAttrib attrib) {
+  setupTexturePosAndSize(attrib, 2);
+}
+
+void GridMesh::setupNextNormalTextureIds(gl::VertexAttrib attrib) {
+  setupTextureIds(attrib, 3);
+}
+void GridMesh::setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib) {
+  setupTexturePosAndSize(attrib, 3);
+}
+
+void GridMesh::addToRenderList(const glm::vec4& render_data,
+                               const StreamedTextureInfo& texinfo) {
   render_data_.push_back(render_data);
-  assert (texture != 0);
-  texture_ids_.push_back(texture);
-  texture_info_.push_back(texture_info);
+
+  texture_ids_.push_back(texinfo.geometry_current->id);
+  texture_ids_.push_back(texinfo.geometry_next->id);
+  texture_ids_.push_back(texinfo.normal_current->id);
+  texture_ids_.push_back(texinfo.normal_next->id);
+
+  texture_pos_and_size_.push_back(glm::vec3{texinfo.geometry_current->position,
+                                   texinfo.geometry_current->size});
+  texture_pos_and_size_.push_back(glm::vec3{texinfo.geometry_next->position,
+                                   texinfo.geometry_next->size});
+  texture_pos_and_size_.push_back(glm::vec3{texinfo.normal_current->position,
+                                   texinfo.normal_current->size});
+  texture_pos_and_size_.push_back(glm::vec3{texinfo.normal_next->position,
+                                   texinfo.normal_next->size});
+
   engine::Settings::geom_nodes_count++;
 }
 
 void GridMesh::clearRenderList() {
   render_data_.clear();
   texture_ids_.clear();
-  texture_info_.clear();
+  texture_pos_and_size_.clear();
 }
 
 void GridMesh::render() {
@@ -104,8 +145,8 @@ void GridMesh::render() {
   gl::Bind(aTextureIds_);
   aTextureIds_.data(texture_ids_);
 
-  gl::Bind(aTextureInfo_);
-  aTextureInfo_.data(texture_info_);
+  gl::Bind(aTexturePosAndSize_);
+  aTexturePosAndSize_.data(texture_pos_and_size_);
 
   gl::PrimitiveRestartIndex(kPrimitiveRestart);
   gl::TemporaryEnable prim_restart(gl::kPrimitiveRestart);

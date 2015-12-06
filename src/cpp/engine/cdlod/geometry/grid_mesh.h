@@ -6,6 +6,7 @@
 #include <map>
 #include <limits>
 #include "../../oglwrap_all.h"
+#include "../texture_info.h"
 
 namespace engine {
 
@@ -30,24 +31,36 @@ struct svec2 {
 class GridMesh {
   gl::VertexArray vao_;
   gl::IndexBuffer aIndices_;
-  gl::ArrayBuffer aPositions_, aRenderData_, aTextureIds_, aTextureInfo_;
+  gl::ArrayBuffer aPositions_, aRenderData_, aTextureIds_, aTexturePosAndSize_;
   int index_count_, dimension_;
   std::vector<glm::vec4> render_data_; // xy: offset, z: scale, w: level
   std::vector<uint64_t> texture_ids_;
-  std::vector<glm::vec3> texture_info_;
+  std::vector<glm::vec3> texture_pos_and_size_; // xy: pos, z: size
 
   GLushort indexOf(int x, int y);
   GLushort kPrimitiveRestart = std::numeric_limits<GLushort>::max();
 
+  void setupTextureIds(gl::VertexAttrib attrib, int offset);
+  void setupTexturePosAndSize(gl::VertexAttrib attrib, int offset);
+
  public:
   GridMesh(GLubyte dimension);
+
   void setupPositions(gl::VertexAttrib attrib);
   void setupRenderData(gl::VertexAttrib attrib);
-  void setupTextureIds(gl::VertexAttrib attrib);
-  void setupTextureInfo(gl::VertexAttrib attrib);
 
-  void addToRenderList(const glm::vec4& render_data, uint64_t texture,
-                       const glm::vec3& texture_info);
+  void setupCurrentGeometryTextureIds(gl::VertexAttrib attrib);
+  void setupCurrentGeometryTexturePosAndSize(gl::VertexAttrib attrib);
+  void setupNextGeometryTextureIds(gl::VertexAttrib attrib);
+  void setupNextGeometryTexturePosAndSize(gl::VertexAttrib attrib);
+
+  void setupCurrentNormalTextureIds(gl::VertexAttrib attrib);
+  void setupCurrentNormalTexturePosAndSize(gl::VertexAttrib attrib);
+  void setupNextNormalTextureIds(gl::VertexAttrib attrib);
+  void setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib);
+
+  void addToRenderList(const glm::vec4& render_data,
+                       const StreamedTextureInfo& texinfo);
   void clearRenderList();
 
   // render with vertex attrib divisor

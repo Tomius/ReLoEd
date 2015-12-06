@@ -5,6 +5,7 @@
 
 #include <memory>
 #include "geometry/quad_grid_mesh.h"
+#include "./texture_info.h"
 #include "../settings.h"
 #include "../collision/spherized_aabb.h"
 #include "../thread_pool.h"
@@ -15,27 +16,19 @@ class CdlodQuadTreeNode {
  public:
   CdlodQuadTreeNode(double x, double z, CubeFace face, int level,
                     CdlodQuadTreeNode* parent = nullptr);
-
-  double scale() const { return pow(2, level_); }
-  double size() { return Settings::kNodeDimension * scale(); }
-
-  bool collidesWithSphere(const Sphere& sphere) const {
-    return bbox_.collidesWithSphere(sphere);
-  }
+  ~CdlodQuadTreeNode();
 
   void age();
   void selectNodes(const glm::vec3& cam_pos,
                    const Frustum& frustum,
                    QuadGridMesh& grid_mesh,
-                   ThreadPool& thread_pool,
-                   uint64_t texture_id = 0,
-                   glm::vec3 texture_info = glm::vec3{});
+                   ThreadPool& thread_pool);
 
   void selectTexture(const glm::vec3& cam_pos,
                      const Frustum& frustum,
                      ThreadPool& thread_pool,
-                     uint64_t& texture_id,
-                     glm::vec3& texture_info);
+                     StreamedTextureInfo& texinfo,
+                     int recursion_level = 0);
 
  private:
   double x_, z_;
@@ -46,16 +39,19 @@ class CdlodQuadTreeNode {
   std::unique_ptr<CdlodQuadTreeNode> children_[4];
   int last_used_ = 0;
 
-  std::mutex load_mutex_;
-  gl::Texture2D texture_;
-  uint64_t texture_id_ = 0;
-  glm::vec3 texture_info_;
-  size_t tex_w = 0, tex_h = 0;
-  bool is_loaded_to_memory_ = false, is_loaded_to_gpu_ = false;
-  std::vector<unsigned short> data_;
+  TextureInfo texture_;
 
   // If a node is not used for this much time (frames), it will be unloaded.
   static const int kTimeToLiveInMemory = 1 << 8;
+
+  // --- functions ---
+
+  double scale() const { return pow(2, level_); }
+  double size() { return Settings::kNodeDimension * scale(); }
+
+  bool collidesWithSphere(const Sphere& sphere) const {
+    return bbox_.collidesWithSphere(sphere);
+  }
 
   void initChild(int i);
   std::string getHeightMapPath() const;

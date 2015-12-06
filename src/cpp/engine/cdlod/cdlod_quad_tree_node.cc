@@ -18,6 +18,12 @@ CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z, CubeFace face,
   }, face, Settings::kFaceSize};
 }
 
+CdlodQuadTreeNode::~CdlodQuadTreeNode() {
+  if (texture_.is_loaded_to_gpu) {
+    Settings::texture_nodes_count--;
+  }
+}
+
 void CdlodQuadTreeNode::initChild(int i) {
   assert (0 <= i && i <= 3);
 
@@ -32,28 +38,26 @@ void CdlodQuadTreeNode::initChild(int i) {
     x = x_+s4; z = z_-s4;
   }
 
-  children_[i] = make_unique<CdlodQuadTreeNode>(x, z, face_, level_-1, parent_);
+  children_[i] = make_unique<CdlodQuadTreeNode>(x, z, face_, level_-1, this);
 }
 
 void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
                                     const Frustum& frustum,
                                     QuadGridMesh& grid_mesh,
-                                    ThreadPool& thread_pool,
-                                    uint64_t texture_id,
-                                    glm::vec3 texture_info) {
+                                    ThreadPool& thread_pool) {
   if (!bbox_.collidesWithFrustum(frustum)) { return; }
 
   last_used_ = 0;
-  float lod_range = Settings::kSmallestGeometryLodDistance * scale();
+  double lod_range = Settings::kSmallestGeometryLodDistance * scale();
 
-  // uint64_t texture_id;
-  // glm::vec3 texture_info;
-  selectTexture(cam_pos, frustum, thread_pool, texture_id, texture_info);
+  StreamedTextureInfo texinfo;
+  selectTexture(cam_pos, frustum, thread_pool, texinfo);
 
   // If we can cover the whole area or if we are a leaf
   Sphere sphere{cam_pos, lod_range};
-  if (!bbox_.collidesWithSphere(sphere) || level_ <= -Settings::kGeomDiv) {
-    grid_mesh.addToRenderList(x_, z_, scale(), level_, texture_id, texture_info);
+  if (!bbox_.collidesWithSphere(sphere) ||
+      level_ <= Settings::kLevelOffset - Settings::kGeomDiv) {
+    grid_mesh.addToRenderList(x_, z_, scale(), level_, texinfo);
   } else {
     bool cc[4]{}; // children collision
 
@@ -64,13 +68,12 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
       cc[i] = children_[i]->collidesWithSphere(sphere);
       if (cc[i]) {
         // Ask child to render what we can't
-        children_[i]->selectNodes(cam_pos, frustum, grid_mesh, thread_pool,
-                                  texture_id, texture_info);
+        children_[i]->selectNodes(cam_pos, frustum, grid_mesh, thread_pool);
       }
     }
 
     // Render what the children didn't do
-    grid_mesh.addToRenderList(x_, z_, scale(), level_, texture_id, texture_info,
+    grid_mesh.addToRenderList(x_, z_, scale(), level_, texinfo,
                               !cc[0], !cc[1], !cc[2], !cc[3]);
   }
 }
@@ -79,25 +82,62 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
 void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
                                       const Frustum& frustum,
                                       ThreadPool& thread_pool,
-                                      uint64_t& texture_id,
-                                      glm::vec3& texture_info) {
-  if (textureLevel() == 8) {
-    loadTexture();
-    upload();
+                                      StreamedTextureInfo& texinfo,
+                                      int recursion_level /*= 0*/) {
+  if (parent_ == nullptr) {
+    if (!texture_.is_loaded_to_gpu) {
+      loadTexture();
+      upload();
+    }
+
+    texinfo.geometry_current = &texture_;
+    texinfo.geometry_next = &texture_;
+    if (texinfo.normal_current == nullptr) {
+      texinfo.normal_current = &texture_;
+      texinfo.normal_next = &texture_;
+    }
+    return;
   }
 
-  if (textureLevel() >= 1) {
-    if (is_loaded_to_gpu_) {
-      Settings::texture_nodes_count++;
-      texture_id = texture_id_;
-      texture_info = texture_info_;
-    } else if (is_loaded_to_memory_) {
+  // if it is possible to get a texture from this
+  // level, and it is not too detailed
+  if (textureLevel() >= Settings::kLevelOffset &&
+      recursion_level >= Settings::kTextureLodOffset) {
+    if (!texture_.is_loaded_to_gpu && texture_.is_loaded_to_memory) {
       upload();
+    }
+
+    if (texture_.is_loaded_to_gpu) {
+      assert(parent_->texture_.is_loaded_to_gpu);
+
+      // we found one which exists and is loaded -> perfect
+      if (texinfo.normal_current == nullptr) {
+        texinfo.normal_current = &texture_;
+        texinfo.normal_next = &parent_->texture_;
+      }
+
+      int tex_dim_offset = Settings::kTextureDimensionExp
+                         - Settings::kNodeDimensionExp;
+      if (recursion_level >= tex_dim_offset) {
+        texinfo.geometry_current = &texture_;
+        texinfo.geometry_next = &parent_->texture_;
+      }
     } else {
+      // this one should be used, but not yet loaded -> start async load, but
+      // make do with the parent for now.
       thread_pool.enqueue([this](){
         loadTexture();
       });
     }
+  }
+
+  // if the geometry is filled we have everything we need,
+  // else we need to continue the recursion
+  if (texinfo.geometry_next == nullptr) {
+    // the current one is not loaded or does not exist, so
+    // the parent should provide the texture
+    parent_->selectTexture(cam_pos, frustum, thread_pool,
+                           texinfo, recursion_level+1);
   }
 }
 
@@ -125,45 +165,61 @@ std::string CdlodQuadTreeNode::getHeightMapPath() const {
 }
 
 int CdlodQuadTreeNode::textureLevel() const {
-  return std::max(level_ - (Settings::kTextureDimensionExp - Settings::kNodeDimensionExp), 0);
+  int offset = Settings::kTextureDimensionExp - Settings::kNodeDimensionExp;
+  return std::max(level_ - offset, 0);
 }
 
 void CdlodQuadTreeNode::loadTexture() {
-  std::unique_lock<std::mutex> lock{load_mutex_};
+  if (parent_ && !parent_->texture_.is_loaded_to_memory) {
+    parent_->loadTexture();
+  }
+  if (texture_.is_loaded_to_gpu) {
+    return;
+  }
 
-  if (!is_loaded_to_memory_) {
+  std::unique_lock<std::mutex> lock{texture_.load_mutex};
+
+  if (!texture_.is_loaded_to_memory) {
     Magick::Image image{getHeightMapPath()};
-    tex_w = image.columns(), tex_h = image.rows();
-    data_.resize(tex_w * tex_h);
-    image.write(0, 0, tex_w, tex_h, "R", MagickCore::ShortPixel, data_.data());
+    texture_.width = image.columns(), texture_.height = image.rows();
+    texture_.data.resize(texture_.width * texture_.height);
+    image.write(0, 0, texture_.width, texture_.height,
+                "R", MagickCore::ShortPixel, texture_.data.data());
 
-    is_loaded_to_memory_ = true;
+    texture_.is_loaded_to_memory = true;
   }
 }
 
 void CdlodQuadTreeNode::upload() {
-  if (!is_loaded_to_gpu_) {
-    gl::Bind(texture_);
-    texture_.upload(gl::kR16, tex_w, tex_h, gl::kRed,
-                    gl::kUnsignedShort, data_.data());
+  if (parent_ && !parent_->texture_.is_loaded_to_gpu) {
+    parent_->upload();
+  }
 
-    texture_.generateMipmap();
-    texture_.maxAnisotropy();
-    texture_.minFilter(gl::kLinearMipmapLinear);
-    texture_.magFilter(gl::kLinear);
-    texture_.wrapS(gl::kClampToEdge);
-    texture_.wrapT(gl::kClampToEdge);
+  assert(texture_.is_loaded_to_memory);
+  if (!texture_.is_loaded_to_gpu) {
+    gl::Bind(texture_.handle);
+    texture_.handle.upload(gl::kR16, texture_.width, texture_.height,
+                           gl::kRed, gl::kUnsignedShort, texture_.data.data());
 
-    texture_id_ = gl(GetTextureHandleARB(texture_.expose()));
-    gl(MakeTextureHandleResidentARB(texture_id_));
-    gl::Unbind(texture_);
+    texture_.handle.generateMipmap();
+    texture_.handle.maxAnisotropy();
+    texture_.handle.minFilter(gl::kLinearMipmapLinear);
+    texture_.handle.magFilter(gl::kLinear);
+    texture_.handle.wrapS(gl::kClampToEdge);
+    texture_.handle.wrapT(gl::kClampToEdge);
+
+    texture_.id = gl(GetTextureHandleARB(texture_.handle.expose()));
+    gl(MakeTextureHandleResidentARB(texture_.id));
+    gl::Unbind(texture_.handle);
 
     double scale = (Settings::kTextureDimension+2.0*Settings::kTextureBorderSize)
                    / Settings::kTextureDimension;
-    double scaled_size = scale * size();
-    texture_info_ = glm::vec3(x_ - scaled_size/2, z_ - scaled_size/2, scaled_size);
+    texture_.size = scale * size();
+    texture_.position = glm::vec2(x_ - texture_.size/2, z_ - texture_.size/2);
 
-    is_loaded_to_gpu_ = true;
+    texture_.data.clear();
+    texture_.is_loaded_to_gpu = true;
+    Settings::texture_nodes_count++;
   }
 }
 

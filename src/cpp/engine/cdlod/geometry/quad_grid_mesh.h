@@ -5,6 +5,7 @@
 
 #include "grid_mesh.h"
 #include "../../settings.h"
+#include "../texture_info.h"
 
 namespace engine {
 
@@ -19,17 +20,24 @@ class QuadGridMesh {
 
   void setupPositions(gl::VertexAttrib attrib);
   void setupRenderData(gl::VertexAttrib attrib);
-  void setupTextureIds(gl::VertexAttrib attrib);
-  void setupTextureInfo(gl::VertexAttrib attrib);
+
+  void setupCurrentGeometryTextureIds(gl::VertexAttrib attrib);
+  void setupCurrentGeometryTexturePosAndSize(gl::VertexAttrib attrib);
+  void setupNextGeometryTextureIds(gl::VertexAttrib attrib);
+  void setupNextGeometryTexturePosAndSize(gl::VertexAttrib attrib);
+
+  void setupCurrentNormalTextureIds(gl::VertexAttrib attrib);
+  void setupCurrentNormalTexturePosAndSize(gl::VertexAttrib attrib);
+  void setupNextNormalTextureIds(gl::VertexAttrib attrib);
+  void setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib);
 
   // Adds a subquad to the render list. tl = top left, br = bottom right
   void addToRenderList(float offset_x, float offset_y, float scale, float level,
-                       uint64_t texture, const glm::vec3& texture_info,
+                       const StreamedTextureInfo& texinfo,
                        bool tl, bool tr, bool bl, bool br);
   // Adds all four subquads
   void addToRenderList(float offset_x, float offset_y, float scale,
-                       float level, uint64_t texture,
-                       const glm::vec3& texture_info);
+                       float level, const StreamedTextureInfo& texinfo);
   void clearRenderList();
   void render();
   size_t node_count() const;

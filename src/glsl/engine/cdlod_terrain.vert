@@ -7,21 +7,21 @@
 #export vec3 Terrain_worldPos(vec3 model_pos);
 #export vec2 Terrain_texCoord(vec3 pos);
 
-in uvec2 Terrain_aTextureId;
-in vec3 Terrain_aTextureInfo;
+in uvec2 Terrain_aCurrentGeometryTextureId;
+in vec3 Terrain_aCurrentGeometryTexturePosAndSize;
+in uvec2 Terrain_aNextGeometryTextureId;
+in vec3 Terrain_aNextGeometryTexturePosAndSize;
 
 uniform int Terrain_uFace;
 uniform int Terrain_uMaxLoadLevel;
+uniform int Terrain_uTextureDimensionWBorders;
 uniform ivec2 Terrain_uTexSize;
 uniform vec3 Terrain_uCamPos;
-uniform float Terrain_uNodeDimension;
 uniform float Terrain_uSmallestGeometryLodDistance;
-int Terrain_uNodeDimensionExp = int(round(log2(Terrain_uNodeDimension)));
 
 uniform int Terrain_uMaxHeight;
 
-float M_PI = 3.14159265359;
-const float morph_end = 0.95, morph_start = 0.8;
+const float kMorphEnd = 0.95, kMorphStart = 0.85;
 
 float Terrain_radius = Terrain_uTexSize.x / 2;
 float Terrain_cam_height = length(Terrain_uCamPos) - Terrain_radius;
@@ -115,10 +115,26 @@ vec4 textureBicubic(sampler2D tex, vec2 texCoords){
   return mix(mix(sample3, sample2, sx), mix(sample1, sample0, sx), sy);
 }
 
-float Terrain_getHeight(vec2 pos) {
-  vec2 sample = (pos - Terrain_aTextureInfo.xy + 1) / Terrain_aTextureInfo.z;
-  float normalized_height = textureBicubic(sampler2D(Terrain_aTextureId), sample).r;
+float Terrain_getHeightInternal(vec2 pos, uvec2 texid, vec3 texPosAndSize) {
+  vec2 sample = (pos - texPosAndSize.xy) / texPosAndSize.z;
+  sample += 0.5 / Terrain_uTextureDimensionWBorders;
+  float normalized_height = textureBicubic(sampler2D(texid), sample).r;
   return normalized_height * Terrain_uMaxHeight;
+}
+
+float Terrain_getHeight(vec2 pos, float level, float morph) {
+  float height0 =
+    Terrain_getHeightInternal(pos, Terrain_aCurrentGeometryTextureId,
+                              Terrain_aCurrentGeometryTexturePosAndSize);
+  if (morph == 0.0 || level <= 0) {
+    return height0;
+  }
+
+  float height1 =
+    Terrain_getHeightInternal(pos, Terrain_aNextGeometryTextureId,
+                              Terrain_aNextGeometryTexturePosAndSize);
+
+  return mix(height0, height1, morph);
 }
 
 vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal) {
@@ -126,43 +142,24 @@ vec4 Terrain_modelPos(vec2 m_pos, vec4 render_data, out vec3 m_normal) {
   float scale = render_data.z;
   float level = render_data.w;
   vec2 pos = Terrain_nodeLocal2Global(m_pos, offset, scale);
-  int iteration_count = 0;
+  float dist = Terrain_estimateDistance(pos);
   float morph = 0;
 
   if (level < Terrain_uMaxLoadLevel) {
-    float dist = Terrain_estimateDistance(pos);
     float next_level_size =
-        pow(2, level+1) * Terrain_uSmallestGeometryLodDistance;
-    float max_dist = morph_end * next_level_size;
-    float start_dist = morph_start * next_level_size;
+        2 * scale * Terrain_uSmallestGeometryLodDistance;
+    float max_dist = kMorphEnd * next_level_size;
+    float start_dist = kMorphStart * next_level_size;
     morph = smoothstep(start_dist, max_dist, dist);
 
     vec2 morphed_pos = Terrain_morphVertex(m_pos, morph);
     pos = Terrain_nodeLocal2Global(morphed_pos, offset, scale);
     dist = Terrain_estimateDistance(pos);
-
-    while (level + iteration_count < Terrain_uMaxLoadLevel &&
-           1.5*next_level_size < dist &&
-           iteration_count+1 < Terrain_uNodeDimensionExp) {
-      scale *= 2;
-      next_level_size *= 2;
-      iteration_count += 1;
-      max_dist = morph_end * next_level_size;
-      start_dist = morph_start * next_level_size;
-      morph = smoothstep(start_dist, max_dist, dist);
-      if (morph == 0.0) {
-        break;
-      }
-
-      morphed_pos = Terrain_morphVertex(morphed_pos * 0.5, morph);
-      pos = Terrain_nodeLocal2Global(morphed_pos, offset, scale);
-      dist = Terrain_estimateDistance(pos);
-    }
   }
 
-  float height = Terrain_getHeight(pos);
+  float height = Terrain_getHeight(pos, level, morph);
   m_normal = vec3(0, 1, 0);
-  return vec4(pos.x, height, pos.y, iteration_count + morph);
+  return vec4(pos.x, height, pos.y, morph);
 }
 
 vec2 Terrain_texCoord(vec3 pos) {

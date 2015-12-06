@@ -28,7 +28,7 @@ float DistanceFromCamera() {
 vec3 DoF(vec3 texel_color) {
   float focus = length(uCamPos) - uRadius;
   float level = max(DistanceFromCamera() - focus, 0) / uZFar * (mipmap_count-1);
-  float floor_level = clamp(floor(level), 0, mipmap_count-1);
+  float floor_level = clamp(floor(level), 0, mipmap_count-2);
   vec3 color = 1.5*texel_color;
   for (int i = 1; i <= floor_level; ++i) {
     color += textureLod(uTex, coord, float(i)).rgb;
