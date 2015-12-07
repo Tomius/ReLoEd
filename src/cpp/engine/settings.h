@@ -12,7 +12,7 @@ namespace Settings {
   static constexpr int kLevelOffset = 1;
 
   // CDLOD nodes' extent is (1 << kNodeDimensionExp)
-  static constexpr int kNodeDimensionExp = 5;
+  static constexpr int kNodeDimensionExp = 6;
   static_assert(3 <= kNodeDimensionExp && kNodeDimensionExp <= 8, "");
 
   static constexpr int kNodeDimension = 1 << kNodeDimensionExp;
@@ -36,7 +36,7 @@ namespace Settings {
   // Geometry subdivision. This practially contols zooming into the heightmap.
   // If for ex. this is three, that means that a 8x8 geometry (9x9 vertices)
   // corresponds to a 1x1 texture area (2x2 texels)
-  static constexpr long kGeomDiv = 2;
+  static constexpr long kGeomDiv = 4;
   static_assert(kGeomDiv <= 2*kNodeDimensionExp, "");
 
   // The resolution of the heightmap

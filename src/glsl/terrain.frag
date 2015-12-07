@@ -38,7 +38,7 @@ vec3 GetNormalModelSpaceInternal(vec2 pos, uvec2 tex_id, vec3 tex_pos_and_size) 
   float px = GetHeight(vec2(pos.x + diff, pos.y), tex_id, tex_pos_and_size);
   float mx = GetHeight(vec2(pos.x - diff, pos.y), tex_id, tex_pos_and_size);
 
-  return normalize(vec3(px-mx, diff, py-my));
+  return normalize(vec3(mx-px, diff, my-py));
 }
 
 vec3 GetNormalModelSpace(vec2 pos) {
