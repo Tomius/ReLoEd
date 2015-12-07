@@ -53,7 +53,8 @@ class ShaderSource {
     filename_ = file;
     std::ifstream shader_file((OGLWRAP_DEFAULT_SHADER_PATH + file).c_str());
     if (!shader_file.is_open()) {
-      throw std::runtime_error("Shader file '" + file + "' not found.");
+      throw std::runtime_error("Shader file '" +
+          (OGLWRAP_DEFAULT_SHADER_PATH + file) + "' not found.");
     }
     std::stringstream shader_string;
     shader_string << shader_file.rdbuf();

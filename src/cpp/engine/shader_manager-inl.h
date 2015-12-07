@@ -15,21 +15,6 @@ ShaderFile* ShaderManager::load(Args&&... args) {
   return shader;
 }
 
-inline ShaderFile* ShaderManager::get(const std::string& filename) {
-  auto iter = shaders_.find(filename);
-  if (iter != shaders_.end()) {
-    return iter->second.get();
-  } else {
-    ShaderFile* shader = load(filename);
-    return shader;
-  }
-}
-
-inline ShaderFile* ShaderManager::publish(const std::string& filename,
-                                          const gl::ShaderSource& src) {
-  return load(filename, src);
-}
-
 }  // namespace engine
 
 #endif

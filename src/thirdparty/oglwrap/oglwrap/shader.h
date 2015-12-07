@@ -24,6 +24,7 @@ class Shader {
 
  private:
   globjects::Shader shader_;  // The handle for the buffer.
+  const ShaderType shader_t_;
 
   /// Stores the source file's name if the shader was initialized from file.
   std::string filename_;
@@ -34,13 +35,13 @@ class Shader {
  public:
   /// Creates the an empty shader object.
   explicit Shader(ShaderType shader_t)
-      : shader_(shader_t), filename_("Unnamed shader") { }
+      : shader_(shader_t), shader_t_(shader_t), filename_("Unnamed shader") { }
 
   /// Creates a shader and sets the file as the shader source.
   /** @param file - The file to load and set as shader source.
     * @see glShaderSource */
   Shader(ShaderType shader_t, const std::string& file)
-      : shader_(shader_t) {
+      : shader_(shader_t), shader_t_(shader_t) {
     set_source(ShaderSource{file});
   }
 
@@ -48,7 +49,7 @@ class Shader {
   /** @param src - The source of the shader code.
     * @see glShaderSource */
   Shader(ShaderType shader_t, const ShaderSource& src)
-      : shader_(shader_t) {
+      : shader_(shader_t), shader_t_(shader_t) {
     set_source(src);
   }
 
@@ -76,6 +77,10 @@ class Shader {
 
   void set_source_file(const std::string& filename)  {
     filename_ = filename;
+  }
+
+  ShaderType shader_type() const {
+    return shader_t_;
   }
 
 #if OGLWRAP_DEFINE_EVERYTHING || ( \

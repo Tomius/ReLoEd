@@ -12,24 +12,6 @@
 
 namespace engine {
 
-inline gl::ShaderType shader_type(const std::string& filename) {
-  size_t dot_position = filename.find_last_of('.');
-  if (dot_position != std::string::npos) {
-    std::string extension = filename.substr(dot_position+1);
-    if (extension == "frag") {
-      return gl::kFragmentShader;
-    } else if (extension == "vert") {
-      return gl::kVertexShader;
-    } else if (extension == "geom") {
-      return gl::kGeometryShader;
-    } else {
-      throw std::invalid_argument("Can't guess the shader type of " + filename);
-    }
-  } else {
-    throw std::invalid_argument("Can't guess the shader type of " + filename);
-  }
-}
-
 class ShaderFile;
 class ShaderProgram;
 class ShaderManager {
@@ -38,29 +20,17 @@ class ShaderManager {
   ShaderFile* load(Args&&... args);
  public:
   ShaderFile* publish(const std::string& filename, const gl::ShaderSource& src);
-  ShaderFile* get(const std::string& filename);
+  ShaderFile* get(const std::string& filename,
+                  const ShaderFile* included_from = nullptr);
 };
 
 class ShaderFile : public gl::Shader {
  public:
-  ShaderFile(const std::string& filename)
-      : ShaderFile(filename, gl::ShaderSource{filename}) {}
+  ShaderFile(std::string filename, const ShaderFile* included_from = nullptr)
+      : ShaderFile(filename, gl::ShaderSource{filename}, included_from) {}
 
-  ShaderFile(const std::string& filename, const gl::ShaderSource& src)
-      : gl::Shader(shader_type(filename)) {
-    std::string src_str = src.source();
-    findIncludes(src_str);
-    for (ShaderFile *included : includes_) {
-      if (included->state_ == gl::Shader::kCompileFailure) {
-        state_ = gl::Shader::kCompileFailure;
-        return;
-      }
-    }
-    findExports(src_str);
-    set_source(src_str);
-    set_source_file(filename);
-    compile();
-  }
+  ShaderFile(std::string filename, const gl::ShaderSource& src,
+             const ShaderFile* included_from = nullptr);
 
   void set_update_func(std::function<void(const gl::Program&)> func) {
     update_func_ = func;
