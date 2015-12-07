@@ -52,6 +52,7 @@ namespace Settings {
   static constexpr bool kWireFrame = false;
 
   // statistics
+  extern bool render, update;
   extern size_t geom_nodes_count, texture_nodes_count;
 };
 

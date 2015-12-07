@@ -68,6 +68,10 @@ class MainScene : public engine::Scene {
           tp_camera_ = nullptr;
           set_camera(free_fly_camera_);
         }
+      } else if (key == GLFW_KEY_KP_1) {
+        engine::Settings::render = !engine::Settings::render;
+      } else if (key == GLFW_KEY_KP_2) {
+        engine::Settings::update = !engine::Settings::update;
       }
     }
   }
