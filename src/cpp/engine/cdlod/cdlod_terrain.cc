@@ -26,6 +26,7 @@ void CdlodTerrain::setup(const gl::Program& program) {
 
   mesh_.setupPositions(program | "Terrain_aPosition");
   mesh_.setupRenderData(program | "Terrain_aRenderData");
+  mesh_.setupMinMax(program | "Terrain_aMinMax");
 
   mesh_.setupCurrentGeometryTextureIds(
       program | "Terrain_aCurrentGeometryTextureId");

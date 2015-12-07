@@ -15,7 +15,7 @@ struct Interval {
   double max;
 };
 
-static inline bool HasIntersection(Interval a, Interval b) {
+static inline bool HasIntersection(const Interval& a, const Interval& b) {
   return a.min - kEpsilon < b.max && b.min - kEpsilon < a.max;
 }
 
@@ -25,6 +25,9 @@ class SpherizedAABB {
   glm::dvec3 normals_[4];
   Interval extents_[4];
   Interval radial_extent_;
+
+  glm::dvec3 dir_to_center_;
+  double angle_;
 
  public:
   SpherizedAABB() = default;
@@ -87,8 +90,10 @@ class SpherizedAABB {
 
     glm::dvec3 vertices[8];
     for (int i = 0; i < 8; ++i) {
-      vertices[i] = Cube2Sphere(m_vertices[i], face, kFaceSize);;
+      vertices[i] = Cube2Sphere(m_vertices[i], face, kFaceSize);
     }
+    dir_to_center_ = normalize(Cube2Sphere(bbox.center(), face, kFaceSize));
+    angle_ = acos(dot(dir_to_center_, normalize(vertices[A])));
 
     enum {
       Front = 0, Right = 1, Back = 2, Left = 3
@@ -161,6 +166,22 @@ class SpherizedAABB {
                               radial_interval_center + sphere.radius()};
     if (!HasIntersection(radial_extent_, radial_extent)) {
       return false;
+    }
+
+    // some weird heuristics
+    double sum_radius = radial_extent_.max + sphere.radius();
+    double contraction = sum_radius - radial_interval_center;
+    assert(contraction >= 0);
+    if (contraction < radial_extent_.max) {
+      double ratio = radial_extent_.max / sum_radius;
+      double d = radial_interval_center - sphere.radius() + ratio * contraction;
+      double cos_ang = d / radial_extent_.max;
+      assert(-1.001 <= cos_ang && cos_ang <= 1.001);
+      double ang = acos(cos_ang);
+
+      if (dot(dir_to_center_, normalize(sphere.center())) < cos(ang + angle_)) {
+        return false;
+      }
     }
 
     return aabb_.collidesWithSphere(sphere);

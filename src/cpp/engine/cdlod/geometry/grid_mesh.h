@@ -31,9 +31,11 @@ struct svec2 {
 class GridMesh {
   gl::VertexArray vao_;
   gl::IndexBuffer aIndices_;
-  gl::ArrayBuffer aPositions_, aRenderData_, aTextureIds_, aTexturePosAndSize_;
+  gl::ArrayBuffer aPositions_, aRenderData_, aMinMax_;
+  gl::ArrayBuffer aTextureIds_, aTexturePosAndSize_;
   int index_count_, dimension_;
   std::vector<glm::vec4> render_data_; // xy: offset, z: level, w: face
+  std::vector<glm::vec2> minmax_;
   std::vector<uint64_t> texture_ids_;
   std::vector<glm::vec3> texture_pos_and_size_; // xy: pos, z: size
 
@@ -48,6 +50,7 @@ class GridMesh {
 
   void setupPositions(gl::VertexAttrib attrib);
   void setupRenderData(gl::VertexAttrib attrib);
+  void setupMinMax(gl::VertexAttrib attrib);
 
   void setupCurrentGeometryTextureIds(gl::VertexAttrib attrib);
   void setupCurrentGeometryTexturePosAndSize(gl::VertexAttrib attrib);
@@ -59,7 +62,7 @@ class GridMesh {
   void setupNextNormalTextureIds(gl::VertexAttrib attrib);
   void setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib);
 
-  void addToRenderList(const glm::vec4& render_data,
+  void addToRenderList(const glm::vec4& render_data, const glm::vec2& minmax,
                        const StreamedTextureInfo& texinfo);
   void clearRenderList();
 

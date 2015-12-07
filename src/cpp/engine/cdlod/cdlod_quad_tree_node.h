@@ -49,15 +49,14 @@ class CdlodQuadTreeNode {
   double scale() const { return pow(2, level_); }
   double size() { return Settings::kNodeDimension * scale(); }
 
-  bool collidesWithSphere(const Sphere& sphere) const {
-    return bbox_.collidesWithSphere(sphere);
-  }
+  bool collidesWithSphere(const Sphere& sphere) const;
 
   void initChild(int i);
   std::string getHeightMapPath() const;
   int textureLevel() const;
   void loadTexture();
   void upload();
+  void refreshMinMax(double min_h, double max_h);
 };
 
 }

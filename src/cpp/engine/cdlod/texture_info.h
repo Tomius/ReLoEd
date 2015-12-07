@@ -4,7 +4,9 @@
 #define ENGINE_CDLOD_TEXTURE_INFO_H_
 
 #include <mutex>
+#include <limits>
 #include "../oglwrap_all.h"
+#include "../settings.h"
 
 namespace engine {
 
@@ -13,12 +15,16 @@ struct TextureInfo {
   glm::dvec2 position; // top-left
   double size = 0;
   size_t width = 0, height = 0;
+  GLushort min = std::numeric_limits<GLushort>::max();
+  GLushort max = std::numeric_limits<GLushort>::min();
+  double min_h = 0;
+  double max_h = Settings::kMaxHeight;
 
   gl::Texture2D handle;
   bool is_loaded_to_gpu = false;
 
   std::mutex load_mutex;
-  std::vector<unsigned short> data;
+  std::vector<GLushort> data;
   bool is_loaded_to_memory = false;
 };
 

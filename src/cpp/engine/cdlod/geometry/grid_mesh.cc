@@ -59,6 +59,14 @@ void GridMesh::setupRenderData(gl::VertexAttrib attrib) {
   gl::Unbind(vao_);
 }
 
+void GridMesh::setupMinMax(gl::VertexAttrib attrib) {
+  gl::Bind(vao_);
+  gl::Bind(aMinMax_);
+  attrib.setup<glm::vec2>().enable();
+  attrib.divisor(1);
+  gl::Unbind(vao_);
+}
+
 void GridMesh::setupTextureIds(gl::VertexAttrib attrib, int offset) {
   gl::Bind(vao_);
   gl::Bind(aTextureIds_);
@@ -108,8 +116,10 @@ void GridMesh::setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib) {
 }
 
 void GridMesh::addToRenderList(const glm::vec4& render_data,
+                               const glm::vec2& minmax,
                                const StreamedTextureInfo& texinfo) {
   render_data_.push_back(render_data);
+  minmax_.push_back(minmax);
 
   texture_ids_.push_back(texinfo.geometry_current->id);
   texture_ids_.push_back(texinfo.geometry_next->id);
@@ -130,6 +140,7 @@ void GridMesh::addToRenderList(const glm::vec4& render_data,
 
 void GridMesh::clearRenderList() {
   render_data_.clear();
+  minmax_.clear();
   texture_ids_.clear();
   texture_pos_and_size_.clear();
 }
@@ -141,6 +152,9 @@ void GridMesh::render() {
   gl::Bind(vao_);
   gl::Bind(aRenderData_);
   aRenderData_.data(render_data_);
+
+  gl::Bind(aMinMax_);
+  aMinMax_.data(minmax_);
 
   gl::Bind(aTextureIds_);
   aTextureIds_.data(texture_ids_);

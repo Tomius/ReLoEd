@@ -75,5 +75,6 @@ void main() {
     diffuse = vec3(0.9, 0.9, 1);
   }
   fragColor = vec4(luminance*diffuse, 1);
+  // fragColor = vec4(luminance*diffuse.rb, vIn.morph, 1);
   fragDepth = length(vIn.c_pos);
 }

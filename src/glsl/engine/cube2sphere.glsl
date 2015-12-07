@@ -18,7 +18,8 @@ float sqr(float x) {
   return x * x;
 }
 
-vec3 Cubify(vec3 p) {
+vec3 Spherify(vec3 p) {
+  // return p;
   return vec3(
     -p.x * sqrt(1 - sqr(p.y)/2 - sqr(p.z)/2 + sqr(p.y*p.z)/3),
     -p.y * sqrt(1 - sqr(p.z)/2 - sqr(p.x)/2 + sqr(p.z*p.x)/3),
@@ -37,7 +38,7 @@ vec3 Terrain_worldPos(vec3 pos, int face) {
     case kPosZ: pos = vec3(+pos.x, +pos.z, +pos.y); break;
     case kNegZ: pos = vec3(-pos.x, +pos.z, -pos.y); break;
   }
-  return (Terrain_radius() + height) * Cubify(pos);
+  return (Terrain_radius() + height) * Spherify(pos);
 }
 
 float Terrain_radius() {

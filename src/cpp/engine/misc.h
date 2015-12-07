@@ -22,6 +22,14 @@ T sqr(const T& x) {
   return x*x;
 }
 
+template<typename T>
+T clamp(const T& x, const T& min, const T& max) {
+  // assert(min < max);
+  if (x < min) { return min; }
+  if (x > max) { return max; }
+  return x;
+}
+
 constexpr double kEpsilon = 1e-5;
 
 }  // namespace engine

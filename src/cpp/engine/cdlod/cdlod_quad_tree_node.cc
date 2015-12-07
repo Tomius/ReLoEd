@@ -12,9 +12,11 @@ namespace engine {
 CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z, CubeFace face,
                                      int level, CdlodQuadTreeNode* parent)
     : x_(x), z_(z), face_(face), level_(level), parent_(parent) {
+  double min_h = parent ? parent->texture_.min_h : 0;
+  double max_h = parent ? parent->texture_.max_h : Settings::kMaxHeight;
   bbox_ = SpherizedAABB{BoundingBox{
-    {x-size()/2, 0, z-size()/2},
-    {x+size()/2, Settings::kMaxHeight, z+size()/2}
+    {x-size()/2, min_h, z-size()/2},
+    {x+size()/2, max_h, z+size()/2}
   }, face, Settings::kFaceSize};
 }
 
@@ -52,12 +54,13 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
 
   StreamedTextureInfo texinfo;
   selectTexture(cam_pos, frustum, thread_pool, texinfo);
+  glm::vec2 minmax(texture_.min_h, texture_.max_h);
 
   // If we can cover the whole area or if we are a leaf
   Sphere sphere{cam_pos, lod_range};
   if (!bbox_.collidesWithSphere(sphere) ||
       level_ <= Settings::kLevelOffset - Settings::kGeomDiv) {
-    grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo);
+    grid_mesh.addToRenderList(x_, z_, level_, int(face_), minmax, texinfo);
   } else {
     bool cc[4]{}; // children collision
 
@@ -73,7 +76,7 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
     }
 
     // Render what the children didn't do
-    grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo,
+    grid_mesh.addToRenderList(x_, z_, level_, int(face_), minmax, texinfo,
                               !cc[0], !cc[1], !cc[2], !cc[3]);
   }
 }
@@ -187,6 +190,15 @@ void CdlodQuadTreeNode::loadTexture() {
                 "R", MagickCore::ShortPixel, texture_.data.data());
 
     texture_.is_loaded_to_memory = true;
+
+    for (GLushort height : texture_.data) {
+      texture_.min = std::min(texture_.min, height);
+      texture_.max = std::max(texture_.max, height);
+    }
+    texture_.min_h = texture_.min * Settings::kMaxHeight /
+                     std::numeric_limits<GLushort>::max();
+    texture_.max_h = texture_.max * Settings::kMaxHeight /
+                     std::numeric_limits<GLushort>::max();
   }
 }
 
@@ -197,6 +209,8 @@ void CdlodQuadTreeNode::upload() {
 
   assert(texture_.is_loaded_to_memory);
   if (!texture_.is_loaded_to_gpu) {
+    refreshMinMax(texture_.min_h, texture_.max_h);
+
     gl::Bind(texture_.handle);
     texture_.handle.upload(gl::kR16, texture_.width, texture_.height,
                            gl::kRed, gl::kUnsignedShort, texture_.data.data());
@@ -221,6 +235,25 @@ void CdlodQuadTreeNode::upload() {
     texture_.is_loaded_to_gpu = true;
     Settings::texture_nodes_count++;
   }
+}
+
+void CdlodQuadTreeNode::refreshMinMax(double min_h, double max_h) {
+  texture_.min_h = min_h;
+  texture_.max_h = max_h;
+  bbox_ = SpherizedAABB{BoundingBox{
+    {x_-size()/2, min_h, z_-size()/2},
+    {x_+size()/2, max_h, z_+size()/2}
+  }, face_, Settings::kFaceSize};
+
+  for (auto& child : children_) {
+    if (child && !child->texture_.is_loaded_to_memory) {
+      child->refreshMinMax(min_h, max_h);
+    }
+  }
+}
+
+bool CdlodQuadTreeNode::collidesWithSphere(const Sphere& sphere) const {
+  return bbox_.collidesWithSphere(sphere);
 }
 
 

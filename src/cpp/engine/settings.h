@@ -12,7 +12,7 @@ namespace Settings {
   static constexpr int kLevelOffset = 1;
 
   // CDLOD nodes' extent is (1 << kNodeDimensionExp)
-  static constexpr int kNodeDimensionExp = 5;
+  static constexpr int kNodeDimensionExp = 4;
   static_assert(3 <= kNodeDimensionExp && kNodeDimensionExp <= 8, "");
 
   static constexpr int kNodeDimension = 1 << kNodeDimensionExp;
@@ -25,7 +25,7 @@ namespace Settings {
   static constexpr double kSmallestGeometryLodDistance = 2*kNodeDimension;
   static_assert(kNodeDimension <= kSmallestGeometryLodDistance, "");
 
-  static constexpr int kTextureLodOffset = 0;
+  static constexpr int kTextureLodOffset = 1;
   static_assert(kTextureLodOffset+kNodeDimensionExp <= kTextureDimensionExp, "");
 
   static constexpr double kSmallestTextureLodDistance =
