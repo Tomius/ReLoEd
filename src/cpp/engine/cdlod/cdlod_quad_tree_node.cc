@@ -57,7 +57,7 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
   Sphere sphere{cam_pos, lod_range};
   if (!bbox_.collidesWithSphere(sphere) ||
       level_ <= Settings::kLevelOffset - Settings::kGeomDiv) {
-    grid_mesh.addToRenderList(x_, z_, scale(), level_, texinfo);
+    grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo);
   } else {
     bool cc[4]{}; // children collision
 
@@ -73,7 +73,7 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
     }
 
     // Render what the children didn't do
-    grid_mesh.addToRenderList(x_, z_, scale(), level_, texinfo,
+    grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo,
                               !cc[0], !cc[1], !cc[2], !cc[3]);
   }
 }

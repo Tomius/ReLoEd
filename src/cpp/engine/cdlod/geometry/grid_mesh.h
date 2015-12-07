@@ -33,7 +33,7 @@ class GridMesh {
   gl::IndexBuffer aIndices_;
   gl::ArrayBuffer aPositions_, aRenderData_, aTextureIds_, aTexturePosAndSize_;
   int index_count_, dimension_;
-  std::vector<glm::vec4> render_data_; // xy: offset, z: scale, w: level
+  std::vector<glm::vec4> render_data_; // xy: offset, z: level, w: face
   std::vector<uint64_t> texture_ids_;
   std::vector<glm::vec3> texture_pos_and_size_; // xy: pos, z: size
 

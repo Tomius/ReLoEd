@@ -32,12 +32,12 @@ class QuadGridMesh {
   void setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib);
 
   // Adds a subquad to the render list. tl = top left, br = bottom right
-  void addToRenderList(float offset_x, float offset_y, float scale, float level,
+  void addToRenderList(float offset_x, float offset_y, int level, int face,
                        const StreamedTextureInfo& texinfo,
                        bool tl, bool tr, bool bl, bool br);
   // Adds all four subquads
-  void addToRenderList(float offset_x, float offset_y, float scale,
-                       float level, const StreamedTextureInfo& texinfo);
+  void addToRenderList(float offset_x, float offset_y, int level, int face,
+                       const StreamedTextureInfo& texinfo);
   void clearRenderList();
   void render();
   size_t node_count() const;

@@ -83,12 +83,11 @@ void CdlodTerrain::render(Camera const& cam) {
 
   thread_pool_.clear();
   engine::Settings::geom_nodes_count = 0;
+  mesh_.clearRenderList();
   for (int face = 0; face < 6; ++face) {
-    mesh_.clearRenderList();
-    gl::Uniform<int>(*program_, "Terrain_uFace") = face;
     faces_[face].render(cam, mesh_, thread_pool_);
-    mesh_.render();
   }
+  mesh_.render();
 }
 
 }  // namespace engine

@@ -12,13 +12,12 @@ layout (location = 1) out float fragDepth;
 
 in VertexData {
   vec3  c_pos, w_pos, m_pos;
-  float level, morph;
-  vec4 render_data;
+  float morph; // can be useful for debugging
+  flat int face;
   flat uvec2 current_tex_id, next_tex_id;
   flat vec3 current_tex_pos_and_size, next_tex_pos_and_size;
 } vIn;
 
-uniform int Terrain_uFace;
 uniform int Terrain_uMaxHeight;
 uniform int Terrain_uTextureDimension;
 uniform int Terrain_uTextureDimensionWBorders;
@@ -60,19 +59,19 @@ vec3 GetNormalModelSpace(vec2 pos) {
 }
 
 vec3 GetNormal(vec2 pos) {
-  return Terrain_worldPos(vIn.m_pos + GetNormalModelSpace(pos))
-       - Terrain_worldPos(vIn.m_pos);
+  return Terrain_worldPos(vIn.m_pos + GetNormalModelSpace(pos), vIn.face)
+       - Terrain_worldPos(vIn.m_pos, vIn.face);
 }
 
 void main() {
   float lighting = dot(GetNormal(vIn.m_pos.xz), SunPos());
   float luminance = 0.2 + 0.6*max(lighting, 0) + 0.2 * (1+lighting)/2;
   vec3 diffuse = vec3(0.0);
-  if (Terrain_uFace/2 == 0) {
+  if (vIn.face/2 == 0) {
     diffuse = vec3(1, 0.9, 0.9);
-  } else if (Terrain_uFace/2 == 1) {
+  } else if (vIn.face/2 == 1) {
     diffuse = vec3(0.9, 1, 0.9);
-  } else if (Terrain_uFace/2 == 2) {
+  } else if (vIn.face/2 == 2) {
     diffuse = vec3(0.9, 0.9, 1);
   }
   fragColor = vec4(luminance*diffuse, 1);

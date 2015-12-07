@@ -2,7 +2,7 @@
 
 #version 330
 
-#export vec3 Terrain_worldPos(vec3 pos);
+#export vec3 Terrain_worldPos(vec3 pos, int face);
 #export float Terrain_radius();
 
 const int kPosX = 0;
@@ -12,7 +12,6 @@ const int kNegY = 3;
 const int kPosZ = 4;
 const int kNegZ = 5;
 
-uniform int Terrain_uFace;
 uniform ivec2 Terrain_uTexSize;
 
 float sqr(float x) {
@@ -27,10 +26,10 @@ vec3 Cubify(vec3 p) {
   );
 }
 
-vec3 Terrain_worldPos(vec3 pos) {
+vec3 Terrain_worldPos(vec3 pos, int face) {
   float height = pos.y; pos.y = 0;
   pos = (pos - Terrain_uTexSize.x/2) / (Terrain_uTexSize.x/2);
-  switch (Terrain_uFace) {
+  switch (face) {
     case kPosX: pos = vec3(+pos.y, +pos.z, -pos.x); break;
     case kNegX: pos = vec3(-pos.y, +pos.z, +pos.x); break;
     case kPosY: pos = vec3(+pos.z, +pos.y, +pos.x); break;

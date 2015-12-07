@@ -45,11 +45,11 @@ void QuadGridMesh::setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib) {
 // Adds a subquad to the render list.
 // tl = top left, br = bottom right
 void QuadGridMesh::addToRenderList(float offset_x, float offset_y,
-                                   float scale, float level,
+                                   int level, int face,
                                    const StreamedTextureInfo& texinfo,
                                    bool tl, bool tr, bool bl, bool br) {
-  glm::vec4 render_data(offset_x, offset_y, scale, level);
-  float dim4 = scale * mesh_.dimension()/2; // our dimension / 4
+  glm::vec4 render_data(offset_x, offset_y, level, face);
+  float dim4 = pow(2, level) * mesh_.dimension()/2; // our dimension / 4
   if (tl) {
     mesh_.addToRenderList(render_data + glm::vec4(-dim4, dim4, 0, 0), texinfo);
   }
@@ -66,9 +66,9 @@ void QuadGridMesh::addToRenderList(float offset_x, float offset_y,
 
 // Adds all four subquads
 void QuadGridMesh::addToRenderList(float offset_x, float offset_y,
-                                   float scale, float level,
+                                   int level, int face,
                                    const StreamedTextureInfo& texinfo) {
-  addToRenderList(offset_x, offset_y, scale, level,
+  addToRenderList(offset_x, offset_y, level, face,
                   texinfo, true, true, true, true);
 }
 
