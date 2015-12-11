@@ -151,6 +151,13 @@ class SpherizedAABB {
   }
 
   bool collidesWithSphere(const Sphere& sphere) const {
+    double radial_interval_center = length(sphere.center());
+    Interval radial_extent = {radial_interval_center - sphere.radius(),
+                              radial_interval_center + sphere.radius()};
+    if (!HasIntersection(radial_extent_, radial_extent)) {
+      return false;
+    }
+
     for (size_t i = 0; i < 4; ++i) {
       double interval_center = dot(sphere.center(), normals_[i]);
       Interval projection_extent = {interval_center - sphere.radius(),
@@ -161,11 +168,19 @@ class SpherizedAABB {
       }
     }
 
-    double radial_interval_center = length(sphere.center());
-    Interval radial_extent = {radial_interval_center - sphere.radius(),
-                              radial_interval_center + sphere.radius()};
-    if (!HasIntersection(radial_extent_, radial_extent)) {
-      return false;
+    // another weird heuristics
+    double sum_radius = radial_extent_.max + sphere.radius();
+    double contraction = sum_radius - radial_interval_center;
+    assert(contraction >= 0);
+    if (contraction < radial_extent_.max) {
+      double ratio = radial_extent_.max / sum_radius;
+      double d = radial_interval_center - sphere.radius() + ratio * contraction;
+      double cos_ang = d / radial_extent_.max;
+      double ang = acos(cos_ang);
+
+      if (dot(dir_to_center_, normalize(sphere.center())) < cos(ang + angle_)) {
+        return false;
+      }
     }
 
     // some weird heuristics
