@@ -32,7 +32,7 @@ class SpherizedAABB {
  public:
   SpherizedAABB() = default;
 
-  SpherizedAABB(const BoundingBox& bbox, CubeFace face, double kFaceSize) {
+  SpherizedAABB(const BoundingBox& bbox, CubeFace face, double face_size) {
     using namespace glm;
 
     const glm::dvec3& mins = bbox.mins();
@@ -89,13 +89,17 @@ class SpherizedAABB {
 
     glm::dvec3 vertices[8];
     for (int i = 0; i < 8; ++i) {
-      vertices[i] = Cube2Sphere(m_vertices[i], face, kFaceSize);
+      vertices[i] = Cube2Sphere(m_vertices[i], face, face_size);
     }
-    glm::dvec3 center = Cube2Sphere(bbox.center(), face, kFaceSize);
+    glm::dvec3 center = Cube2Sphere(bbox.center(), face, face_size);
     dir_to_center_ = normalize(center);
     angle_ = acos(dot(dir_to_center_, normalize(vertices[A])));
 
-    bsphere_ = Sphere(center, glm::length(center - vertices[B]));
+    double bsphere_radius = 0;
+    for (const glm::dvec3& vertex : vertices) {
+      bsphere_radius = std::max(bsphere_radius, glm::length(center - vertex));
+    }
+    bsphere_ = Sphere(center, bsphere_radius);
 
     enum {
       Front = 0, Right = 1, Back = 2, Left = 3
@@ -108,13 +112,13 @@ class SpherizedAABB {
     normals_[Left]  = GetNormal(vertices, H, G, F, G);
 
     extents_[Front] =
-      getExtent(normals_[Front], m_vertices[B], m_vertices[A], face, kFaceSize);
+      getExtent(normals_[Front], m_vertices[B], m_vertices[A], face, face_size);
     extents_[Right] =
-      getExtent(normals_[Right], m_vertices[A], m_vertices[E], face, kFaceSize);
+      getExtent(normals_[Right], m_vertices[A], m_vertices[E], face, face_size);
     extents_[Back]  =
-      getExtent(normals_[Back],  m_vertices[H], m_vertices[G], face, kFaceSize);
+      getExtent(normals_[Back],  m_vertices[H], m_vertices[G], face, face_size);
     extents_[Left]  =
-      getExtent(normals_[Left],  m_vertices[F], m_vertices[B], face, kFaceSize);
+      getExtent(normals_[Left],  m_vertices[F], m_vertices[B], face, face_size);
   }
 
   static glm::dvec3 GetNormal(glm::dvec3 vertices[], int a, int b, int c, int d) {
@@ -134,11 +138,11 @@ class SpherizedAABB {
   static Interval getExtent(const glm::dvec3& normal,
                             const glm::dvec3& m_space_min,
                             const glm::dvec3& m_space_max,
-                            CubeFace face, double kFaceSize) {
+                            CubeFace face, double face_size) {
     Interval interval;
     glm::dvec3 diff = m_space_max - m_space_min;
     for (int i = 0; i <= 4; ++i) {
-      glm::dvec3 current = Cube2Sphere(m_space_min + i/4.0*diff, face, kFaceSize);
+      glm::dvec3 current = Cube2Sphere(m_space_min + i/4.0*diff, face, face_size);
       double current_projection = dot(current, normal);
       if (i == 0) {
         interval.min = current_projection;
