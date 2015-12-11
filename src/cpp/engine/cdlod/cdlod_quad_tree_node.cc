@@ -12,10 +12,10 @@ namespace engine {
 CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z, CubeFace face,
                                      int level, CdlodQuadTreeNode* parent)
     : x_(x), z_(z), face_(face), level_(level), parent_(parent) {
-  bbox_ = SpherizedAABB{BoundingBox{
+  bbox_ = SpherizedAABB{
     {x-size()/2, 0, z-size()/2},
-    {x+size()/2, Settings::kMaxHeight, z+size()/2}
-  }, face, Settings::kFaceSize};
+    {x+size()/2, Settings::kMaxHeight, z+size()/2},
+    face, Settings::kFaceSize};
 }
 
 CdlodQuadTreeNode::~CdlodQuadTreeNode() {

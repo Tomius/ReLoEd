@@ -6,7 +6,6 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include "../misc.h"
-#include "./bounding_box.h"
 
 namespace engine {
 

@@ -4,7 +4,7 @@
 #define ENGINE_COLLISION_SPHERIZED_AABB_H_
 
 #include "../misc.h"
-#include "./bounding_box.h"
+#include "./sphere.h"
 #include "./cube2sphere.h"
 #include "../settings.h"
 
@@ -32,11 +32,10 @@ class SpherizedAABB {
  public:
   SpherizedAABB() = default;
 
-  SpherizedAABB(const BoundingBox& bbox, CubeFace face, double face_size) {
+  SpherizedAABB(const glm::dvec3& mins, const glm::dvec3& maxes,
+                CubeFace face, double face_size) {
     using namespace glm;
 
-    const glm::dvec3& mins = bbox.mins();
-    const glm::dvec3& maxes = bbox.maxes();
     double radius = Settings::kSphereRadius;
     radial_extent_ = {radius + mins.y, radius + maxes.y};
 
@@ -91,7 +90,7 @@ class SpherizedAABB {
     for (int i = 0; i < 8; ++i) {
       vertices[i] = Cube2Sphere(m_vertices[i], face, face_size);
     }
-    glm::dvec3 center = Cube2Sphere(bbox.center(), face, face_size);
+    glm::dvec3 center = Cube2Sphere((mins + maxes)/2.0, face, face_size);
     dir_to_center_ = normalize(center);
     angle_ = acos(dot(dir_to_center_, normalize(vertices[A])));
 
