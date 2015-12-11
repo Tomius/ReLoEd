@@ -7,8 +7,8 @@ namespace engine {
 
 static glm::dvec3 Cubify(const glm::dvec3& p) {
   return {
-    -p.x * sqrt(1 - sqr(p.y)/2 - sqr(p.z)/2 + sqr(p.y*p.z)/3),
-    -p.y * sqrt(1 - sqr(p.z)/2 - sqr(p.x)/2 + sqr(p.z*p.x)/3),
+    p.x * sqrt(1 - sqr(p.y)/2 - sqr(p.z)/2 + sqr(p.y*p.z)/3),
+    p.y * sqrt(1 - sqr(p.z)/2 - sqr(p.x)/2 + sqr(p.z*p.x)/3),
     p.z * sqrt(1 - sqr(p.x)/2 - sqr(p.y)/2 + sqr(p.x*p.y)/3)
   };
 }
@@ -19,12 +19,12 @@ static glm::dvec3 FaceLocalToUnitCube(const glm::dvec3& pos,
   glm::dvec3 no_height = glm::dvec3(pos.x, 0, pos.z);
   glm::dvec3 n = (no_height - kFaceSize/2) / (kFaceSize/2); // normalized to [-1, 1]
   switch (face) {
-    case CubeFace::kPosX: return {+n.y, +n.z, -n.x}; break;
-    case CubeFace::kNegX: return {-n.y, +n.z, +n.x}; break;
-    case CubeFace::kPosY: return {+n.z, +n.y, +n.x}; break;
-    case CubeFace::kNegY: return {-n.z, -n.y, +n.x}; break;
-    case CubeFace::kPosZ: return {+n.x, +n.z, +n.y}; break;
-    case CubeFace::kNegZ: return {-n.x, +n.z, -n.y}; break;
+    case CubeFace::kPosX: return {-n.y, -n.z, -n.x}; break;
+    case CubeFace::kNegX: return {+n.y, -n.z, +n.x}; break;
+    case CubeFace::kPosY: return {-n.z, -n.y, +n.x}; break;
+    case CubeFace::kNegY: return {+n.z, +n.y, +n.x}; break;
+    case CubeFace::kPosZ: return {-n.x, -n.z, +n.y}; break;
+    case CubeFace::kNegZ: return {+n.x, -n.z, -n.y}; break;
   }
 }
 
@@ -50,12 +50,9 @@ engine::BoundingBox engine::Cube2Sphere(const engine::BoundingBox& bbox,
                                         CubeFace face, double kFaceSize) {
   using namespace glm;
 
-  // bbox_on_cube
   BoundingBox bbox_on_cube = FaceLocalToUnitCube(bbox, face, kFaceSize);
-  dvec3 bocmin = bbox_on_cube.mins(), bocmax = bbox_on_cube.maxes();
-
-  dvec3 mins = dvec3(-bocmax.x, -bocmax.y, +bocmin.z);
-  dvec3 maxes = dvec3(-bocmin.x, -bocmin.y, +bocmax.z);
+  dvec3 mins = bbox_on_cube.mins();
+  dvec3 maxes = bbox_on_cube.maxes();
 
   // the first minus part in the sqrt
   dvec3 a = sqr(dvec3{mins.y, mins.z, mins.x});
