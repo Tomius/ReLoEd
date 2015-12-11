@@ -45,16 +45,17 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
                                     const Frustum& frustum,
                                     QuadGridMesh& grid_mesh,
                                     ThreadPool& thread_pool) {
-  if (!bbox_.collidesWithFrustum(frustum)) { return; }
-
   last_used_ = 0;
-  double lod_range = Settings::kSmallestGeometryLodDistance * scale();
 
   StreamedTextureInfo texinfo;
   selectTexture(cam_pos, frustum, thread_pool, texinfo);
 
+  // textures should be loaded, even if it is outside the frustum (otherwise the
+  // texture lod difference of neighbour nodes can cause geometry cracks)
+  if (!bbox_.collidesWithFrustum(frustum)) { return; }
+
   // If we can cover the whole area or if we are a leaf
-  Sphere sphere{cam_pos, lod_range};
+  Sphere sphere{cam_pos, Settings::kSmallestGeometryLodDistance * scale()};
   if (!bbox_.collidesWithSphere(sphere) ||
       level_ <= Settings::kLevelOffset - Settings::kGeomDiv) {
     grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo);

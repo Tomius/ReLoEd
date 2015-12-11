@@ -15,7 +15,6 @@ enum class CubeFace {
 };
 
 glm::dvec3 Cube2Sphere(const glm::dvec3& pos, CubeFace face, double kFaceSize);
-BoundingBox Cube2Sphere(const BoundingBox& bbox, CubeFace face, double kFaceSize);
 
 }
 

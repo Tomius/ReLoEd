@@ -137,8 +137,6 @@ class Camera : public Behaviour {
       m[2][3] - m[2][2],
       m[3][3] - m[3][2]}
     }};
-
-    // Note: there's no need to normalize the plane parameters
   }
 };
 

@@ -16,7 +16,7 @@ CdlodTerrain::CdlodTerrain(engine::ShaderManager* manager)
         {Settings::kFaceSize, CubeFace::kPosZ},
         {Settings::kFaceSize, CubeFace::kNegZ}
       }
-    , thread_pool_{1}
+    , thread_pool_{2}
 { }
 
 void CdlodTerrain::setup(const gl::Program& program) {

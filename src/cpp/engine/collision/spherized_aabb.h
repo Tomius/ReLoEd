@@ -20,7 +20,7 @@ static inline bool HasIntersection(const Interval& a, const Interval& b) {
 }
 
 class SpherizedAABB {
-  BoundingBox aabb_;
+  Sphere bsphere_;
 
   glm::dvec3 normals_[4];
   Interval extents_[4];
@@ -32,8 +32,7 @@ class SpherizedAABB {
  public:
   SpherizedAABB() = default;
 
-  SpherizedAABB(const BoundingBox& bbox, CubeFace face, double kFaceSize)
-      : aabb_ {Cube2Sphere(bbox, face, kFaceSize)} {
+  SpherizedAABB(const BoundingBox& bbox, CubeFace face, double kFaceSize) {
     using namespace glm;
 
     const glm::dvec3& mins = bbox.mins();
@@ -92,8 +91,11 @@ class SpherizedAABB {
     for (int i = 0; i < 8; ++i) {
       vertices[i] = Cube2Sphere(m_vertices[i], face, kFaceSize);
     }
-    dir_to_center_ = normalize(Cube2Sphere(bbox.center(), face, kFaceSize));
+    glm::dvec3 center = Cube2Sphere(bbox.center(), face, kFaceSize);
+    dir_to_center_ = normalize(center);
     angle_ = acos(dot(dir_to_center_, normalize(vertices[A])));
+
+    bsphere_ = Sphere(center, glm::length(center - vertices[B]));
 
     enum {
       Front = 0, Right = 1, Back = 2, Left = 3
@@ -151,6 +153,10 @@ class SpherizedAABB {
   }
 
   bool collidesWithSphere(const Sphere& sphere) const {
+    if (!bsphere_.collidesWithSphere(sphere)) {
+      return false;
+    }
+
     double radial_interval_center = length(sphere.center());
     Interval radial_extent = {radial_interval_center - sphere.radius(),
                               radial_interval_center + sphere.radius()};
@@ -183,11 +189,11 @@ class SpherizedAABB {
       }
     }
 
-    return aabb_.collidesWithSphere(sphere);
+    return true;
   }
 
   bool collidesWithFrustum(const Frustum& frustum) const {
-    return aabb_.collidesWithFrustum(frustum);
+    return bsphere_.collidesWithFrustum(frustum);
   }
 };
 
