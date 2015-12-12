@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./settings.h"
+#include "./preproc_settings.h"
 
 enum CubeFace {
   kPosX, kNegX, kPosY, kNegY, kPosZ, kNegZ

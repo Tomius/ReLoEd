@@ -6,7 +6,8 @@
 #include <memory>
 #include <cassert>
 #include <Magick++.h>
-#include "./settings.h"
+#include <glm/glm.hpp>
+#include "./preproc_settings.h"
 
 using TexelData = unsigned short;
 
@@ -55,11 +56,14 @@ class TexQuadTreeNode {
     assert(0 <= i && i < 4); return children_[i].get();
   }
 
-  unsigned short SelectPixel (double x, double y, int level);
-  unsigned short FetchPixel (int x, int y, int level);
+  unsigned short SelectPixel(glm::dvec2 sample, glm::dvec2 diff);
+  unsigned short FetchPixel(glm::ivec2 sample, glm::dvec2 diff);
 
  private:
-  unsigned short FetchPixelInternal (int x, int y, int level);
+  unsigned short SelectPixel(double x, double z, double dx, double dz);
+  unsigned short FetchPixel(int x, int z, double dx, double dz);
+  unsigned short FetchPixelInternal(int x, int z, double dx, double dz);
+
   TexQuadTreeNode* parent_;
   double x_, z_, sx_, sz_;
   unsigned tex_w_, tex_h_, index_, data_start_offset_ = 0;

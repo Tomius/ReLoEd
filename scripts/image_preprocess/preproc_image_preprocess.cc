@@ -1,9 +1,10 @@
 #include <iostream>
-#include "./tex_quad_tree_node.h"
-#include "./cdlod_quad_tree_node.h"
+#include "./preproc_settings.h"
+#include "./preproc_tex_quad_tree_node.h"
+#include "./preproc_cdlod_quad_tree_node.h"
 
 int main(int argv, char** argc) {
-  int tw = 172800, th = 86400;
+  int tw = kInputWidth, th = kInputHeight;
   TexQuadTreeNode tex_node (nullptr, tw/2, th/2, tw, th, 9, 0);
 
   char face = argc[1][0];

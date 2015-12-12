@@ -4,8 +4,8 @@
 #define ENGINE_CDLOD_QUAD_TREE_NODE_H_
 
 #include <memory>
-#include "./tex_quad_tree_node.h"
-#include "./cube2sphere.h"
+#include "./preproc_tex_quad_tree_node.h"
+#include "./preproc_cube2sphere.h"
 
 class CdlodQuadTreeNode {
  public:

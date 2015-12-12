@@ -3,8 +3,8 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
-#include "./cube2sphere.h"
-#include "./cdlod_quad_tree_node.h"
+#include "./preproc_cube2sphere.h"
+#include "./preproc_cdlod_quad_tree_node.h"
 
 static long image_counter = 0;
 static time_t start_timer, current_timer;
@@ -30,7 +30,7 @@ void CdlodQuadTreeNode::initChild(int i) {
 }
 
 void CdlodQuadTreeNode::GenerateImage(TexQuadTreeNode& texture) {
-  if (level_ < 1) {
+  if (level_ < 8) {
     return;
   }
 
@@ -60,9 +60,17 @@ void CdlodQuadTreeNode::GenerateImage(TexQuadTreeNode& texture) {
       };
       glm::dvec2 plane_sample = Cube2Plane(sample, face_, kFaceSize);
 
+      // derivatives for mipmapping
+      glm::dvec3 next_sample{
+        left_x + (x+0.99-kBorderSize) * size() / (w-2*kBorderSize), 0,
+        top_z  + (y+0.99-kBorderSize) * size() / (h-2*kBorderSize)
+      };
+      glm::dvec2 plane_next_sample = Cube2Plane(next_sample, face_, kFaceSize);
+      glm::dvec2 diff = plane_next_sample - plane_sample;
 
-      // unsigned short value = texture.FetchPixel (plane_sample.x, plane_sample.y, level_);
-      unsigned short value = texture.SelectPixel (plane_sample.x, plane_sample.y, level_);
+      // unsigned short value = texture.FetchPixel(glm::ivec2(plane_sample), diff);
+      unsigned short value = texture.SelectPixel(plane_sample, diff);
+
       image[y*w + x] = value;
       // image[y*w + x] = pow(value / 65535.0, 1/2.2) * 65535.0;
     }
@@ -72,7 +80,7 @@ void CdlodQuadTreeNode::GenerateImage(TexQuadTreeNode& texture) {
   out.read(w, h, "I", Magick::ShortPixel, image);
   delete[] image;
 
-  std::string dir = output_dir + "/" + std::to_string(int(face_)) +
+  std::string dir = kOutputDir + "/" + std::to_string(int(face_)) +
                                  "/" + std::to_string(level_) +
                                  "/" + std::to_string(long(x_));
   std::string filename = std::to_string(long(z_)) + ".png";
