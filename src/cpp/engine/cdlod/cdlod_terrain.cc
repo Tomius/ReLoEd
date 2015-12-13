@@ -16,7 +16,7 @@ CdlodTerrain::CdlodTerrain(engine::ShaderManager* manager)
         {Settings::kFaceSize, CubeFace::kPosZ},
         {Settings::kFaceSize, CubeFace::kNegZ}
       }
-    , thread_pool_{2}
+    , thread_pool_{1}
 { }
 
 void CdlodTerrain::setup(const gl::Program& program) {
@@ -59,6 +59,9 @@ void CdlodTerrain::setup(const gl::Program& program) {
 
   gl::Uniform<float>(program, "Terrain_uSmallestTextureLodDistance") =
       Settings::kSmallestTextureLodDistance;
+
+  gl::Uniform<int>(program, "Terrain_uLevelOffset") =
+      Settings::kLevelOffset;
 
   gl::Uniform<int>(program, "Terrain_uMaxLoadLevel") =
       faces_[0].max_node_level();

@@ -23,7 +23,7 @@ uniform int Terrain_uTextureDimension;
 uniform int Terrain_uTextureDimensionWBorders;
 uniform float Terrain_uSmallestTextureLodDistance;
 
-const float kMorphEnd = 0.95, kMorphStart = 0.85;
+const float kMorphEnd = 0.90, kMorphStart = 0.80;
 
 float GetHeight(vec2 pos, uvec2 tex_id, vec3 tex_pos_and_size) {
   vec2 sample = (pos - tex_pos_and_size.xy) / tex_pos_and_size.z;
@@ -75,5 +75,6 @@ void main() {
     diffuse = vec3(0.9, 0.9, 1);
   }
   fragColor = vec4(luminance*diffuse, 1);
+  // fragColor = vec4(luminance*diffuse.rg, 0.9*luminance*diffuse.b + 0.1*vIn.morph, 1);
   fragDepth = length(vIn.c_pos);
 }

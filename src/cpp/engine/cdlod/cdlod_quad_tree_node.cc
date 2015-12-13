@@ -21,6 +21,7 @@ CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z, CubeFace face,
 CdlodQuadTreeNode::~CdlodQuadTreeNode() {
   if (texture_.is_loaded_to_gpu) {
     Settings::texture_nodes_count--;
+    gl(MakeTextureHandleNonResidentARB(texture_.id));
   }
 }
 
@@ -96,6 +97,7 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
     if (texinfo.normal_current == nullptr) {
       texinfo.normal_current = &texture_;
       texinfo.normal_next = &texture_;
+      last_used_ = 0;
     }
     return;
   }
@@ -115,13 +117,15 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
       if (texinfo.normal_current == nullptr) {
         texinfo.normal_current = &texture_;
         texinfo.normal_next = &parent_->texture_;
+        last_used_ = 0;
+        parent_->last_used_ = 0;
       }
 
-      int tex_dim_offset = Settings::kTextureDimensionExp
-                         - Settings::kNodeDimensionExp;
-      if (recursion_level >= tex_dim_offset) {
+      if (recursion_level >= Settings::kTexDimOffset) {
         texinfo.geometry_current = &texture_;
         texinfo.geometry_next = &parent_->texture_;
+        last_used_ = 0;
+        parent_->last_used_ = 0;
       }
     } else {
       // this one should be used, but not yet loaded -> start async load, but
@@ -158,7 +162,7 @@ void CdlodQuadTreeNode::age() {
 }
 
 std::string CdlodQuadTreeNode::getHeightMapPath() const {
-  return std::string{"src/resources/height"}
+  return std::string{"/media/icecool/SSData/gmted2010_75_cube"}
          + "/" + std::to_string(int(face_))
          + "/" + std::to_string(textureLevel())
          + "/" + std::to_string(long(x_))
@@ -166,8 +170,7 @@ std::string CdlodQuadTreeNode::getHeightMapPath() const {
 }
 
 int CdlodQuadTreeNode::textureLevel() const {
-  int offset = Settings::kTextureDimensionExp - Settings::kNodeDimensionExp;
-  return std::max(level_ - offset, 0);
+  return level_ - Settings::kTexDimOffset;
 }
 
 void CdlodQuadTreeNode::loadTexture() {

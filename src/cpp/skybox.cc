@@ -26,7 +26,7 @@ Skybox::Skybox(engine::GameObject* parent)
 
 glm::vec3 Skybox::getSunPos() const {
   return glm::normalize(
-           glm::vec3{-cos(time_ * 2 * M_PI / day_duration), 0.3f,
+           glm::vec3{-cos(time_ * 2 * M_PI / day_duration), 0.1f,
                      -sin(time_ * 2 * M_PI / day_duration)});
 }
 

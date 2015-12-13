@@ -15,6 +15,7 @@ in uvec2 Terrain_aNextGeometryTextureId;
 in vec3 Terrain_aNextGeometryTexturePosAndSize;
 in vec4 Terrain_aRenderData;
 
+uniform int Terrain_uLevelOffset;
 uniform int Terrain_uMaxLoadLevel;
 uniform int Terrain_uTextureDimensionWBorders;
 uniform vec3 Terrain_uCamPos;
@@ -56,7 +57,7 @@ float Terrain_getHeight(vec2 pos, float morph) {
   float height0 =
     Terrain_getHeightInternal(pos, Terrain_aCurrentGeometryTextureId,
                               Terrain_aCurrentGeometryTexturePosAndSize);
-  if (morph == 0.0 || Terrain_level <= 0) {
+  if (morph == 0.0 || Terrain_level < Terrain_uLevelOffset) {
     return height0;
   }
 
