@@ -1,32 +1,27 @@
 // Copyright (c) 2015, Tamas Csala
 
+#include <limits>
 #include <memory>
 #include <iostream>
 #include <algorithm>
 #include <Magick++.h>
 #include "./preproc_tex_quad_tree_node.h"
 
-static const char* input_path = "/media/icecool/SSData/gmted75/height";
-
 TexQuadTreeNode::TexQuadTreeNode(TexQuadTreeNode* parent,
-                                 double x, double z, double sx, double sz,
+                                 double x, double y, double sx, double sy,
                                  int level, unsigned index)
     : parent_(parent)
-    , x_(x), z_(z)
-    , sx_(sx), sz_(sz)
+    , x_(x), y_(y)
+    , sx_(sx), sy_(sy)
     , index_(index), level_(level)
 { }
 
-std::string TexQuadTreeNode::map_path(const char* base_path) const {
+std::string TexQuadTreeNode::texture_path() const {
   char file_path[200];
-  int tx = int_left_x(), ty = int_top_z();
-  sprintf(file_path, "%s/%d/%d/%d.png", base_path, level_, tx, ty);
+  int tx = int_left_x(), ty = int_top_y();
+  sprintf(file_path, "%s/%d/%d/%d.png", kInputDir.c_str(), level_, tx, ty);
 
   return file_path;
-}
-
-std::string TexQuadTreeNode::height_map_path() const {
-  return map_path(input_path);
 }
 
 void TexQuadTreeNode::load() {
@@ -34,14 +29,16 @@ void TexQuadTreeNode::load() {
     return;
   }
 
-  { // height tex
-    Magick::Image height{height_map_path()};
-    tex_w_ = height.columns();
-    tex_h_ = height.rows();
-    data_.resize(tex_w_*tex_h_);
+  Magick::Image image{texture_path()};
+  tex_w_ = image.columns();
+  tex_h_ = image.rows();
+  data_.resize(tex_w_*tex_h_);
 
-    height.write(0, 0, tex_w_, tex_h_, "R", MagickCore::ShortPixel, data_.data());
-  }
+#ifdef HEIGHTMAP
+  image.write(0, 0, tex_w_, tex_h_, "R", MagickCore::ShortPixel, data_.data());
+#else
+  image.write(0, 0, tex_w_, tex_h_, "RGB", MagickCore::CharPixel, data_.data());
+#endif
 }
 
 void TexQuadTreeNode::age() {
@@ -63,30 +60,30 @@ template<typename T>
 void TexQuadTreeNode::initChildInternal(int i) {
   T left_sx = T(sx_)/2;
   T right_sx = T(sx_) - T(sx_)/2;
-  T top_sz = T(sz_)/2;
-  T bottom_sz = T(sz_) - T(sz_)/2;
+  T top_sy = T(sy_)/2;
+  T bottom_sy = T(sy_) - T(sy_)/2;
 
   T left_cx = T(x_) - (left_sx - left_sx/2);
   T right_cx = T(x_) + right_sx/2;
-  T top_cz = T(z_) - (top_sz - top_sz/2);
-  T bottom_cz = T(z_) + bottom_sz/2;
+  T top_cy = T(y_) - (top_sy - top_sy/2);
+  T bottom_cy = T(y_) + bottom_sy/2;
 
   switch (i) {
     case 0: { // top left
       children_[0] = std::make_unique<TexQuadTreeNode>(
-          this, left_cx, top_cz, left_sx, top_sz, level_-1, i);
+          this, left_cx, top_cy, left_sx, top_sy, level_-1, i);
     } break;
     case 1: { // top right
       children_[1] = std::make_unique<TexQuadTreeNode>(
-          this, right_cx, top_cz, right_sx, top_sz, level_-1, i);
+          this, right_cx, top_cy, right_sx, top_sy, level_-1, i);
     } break;
     case 2: { // bottom left
       children_[2] = std::make_unique<TexQuadTreeNode>(
-          this, left_cx, bottom_cz, left_sx, bottom_sz, level_-1, i);
+          this, left_cx, bottom_cy, left_sx, bottom_sy, level_-1, i);
     } break;
     case 3: { // bottom right
       children_[3] = std::make_unique<TexQuadTreeNode>(
-          this, right_cx, bottom_cz, right_sx, bottom_sz, level_-1, i);
+          this, right_cx, bottom_cy, right_sx, bottom_sy, level_-1, i);
     } break;
     default: {
       throw std::out_of_range("Tried to index "
@@ -98,66 +95,6 @@ void TexQuadTreeNode::initChildInternal(int i) {
 void TexQuadTreeNode::initChild(int i) {
   initChildInternal<int>(i);
 }
-
-unsigned short TexQuadTreeNode::FetchPixel(glm::ivec2 sample, glm::dvec2 diff) {
-  return FetchPixel(sample.x, sample.y, std::abs(diff.x), std::abs(diff.y));
-}
-
-unsigned short TexQuadTreeNode::FetchPixel(int x, int z, double dx, double dz) {
-  if (x < 0) {
-    x += sx_;
-  } else if (sx_ <= x) {
-    x -= sx_;
-  }
-
-  if (z < 0) {
-    z = std::abs(z);
-  } else if (sz_ <= z) {
-    z = sz_ - (z - sz_ + 1);
-  }
-
-  unsigned short ret = FetchPixelInternal(x, z, dx, dz);
-  age();
-  return ret;
-}
-
-unsigned short TexQuadTreeNode::FetchPixelInternal(int x, int z,
-                                                   double dx, double dz) {
-  // std::cout << x << ", " << z << ", " << dx << ", " << dz << std::endl;
-  assert (int_left_x() <= x && x < int_right_x());
-  assert (int_top_z() <= z && z < int_bottom_z());
-
-  last_used_ = 0;
-
-  load();
-  int borderless_width = tex_w_ - 2*kBorderSize;
-  int borderless_height = tex_h_ - 2*kBorderSize;
-  glm::dvec2 pixel_coverage = glm::dvec2{sx_ / borderless_width,
-                                         sz_ / borderless_height};
-  // std::cout << dx << ", " << dz << std::endl;
-  // std::cout << pixel_coverage << std::endl << std::endl;
-
-  if (level_ == 0 || (pixel_coverage.x < dx && pixel_coverage.y < dz)) {
-    int col = (x - int_left_x()) / pixel_coverage.x + kBorderSize;
-    int row = (z - int_top_z()) / pixel_coverage.y + kBorderSize;
-    int idx = row*tex_w_ + col;
-    assert(0 <= idx && idx < data_.size());
-    return data_[idx];
-  } else {
-    int idx;
-    if (x < x_) {
-      idx = z < z_ ? 0 : 2;
-    } else {
-      idx = z < z_ ? 1 : 3;
-    }
-
-    if (!children_[idx]) {
-      initChild(idx);
-    }
-    return children_[idx]->FetchPixelInternal(x, z, dx, dz);
-  }
-}
-
 
 static float BellFunc(float x) {
   float f = x * 0.75; // Converting -2 to +2 to -1.5 to +1.5
@@ -191,29 +128,106 @@ static float CatMullRom(float x) {
   }
 }
 
-unsigned short TexQuadTreeNode::SelectPixel(glm::dvec2 sample, glm::dvec2 diff) {
-  return SelectPixel(sample.x, sample.y, std::abs(diff.x), std::abs(diff.y));
+TexelData TexQuadTreeNode::FetchPixel(glm::dvec2 sample, glm::dvec2 diff) {
+  return FetchPixel(sample.x, sample.y, std::abs(diff.x), std::abs(diff.y));
 }
 
-unsigned short TexQuadTreeNode::SelectPixel(double sample_x, double sample_z,
-                                            double dx, double dz) {
-  // sample_x /= dx / 2;
-  // sample_z /= dz / 2;
-  glm::ivec2 top_left = glm::ivec2(glm::floor(glm::dvec2{sample_x, sample_z}));
-  glm::dvec2 fraction = glm::fract(glm::dvec2{sample_x, sample_z});
-
-  double sum = 0.0;
-  double sum_weight = 0.0;
-  for (int x = -1; x <= 2; x++) {
-    for (int y = -1; y <= 2; y++) {
-      glm::ivec2 pos = top_left + glm::ivec2(x, y);
-      double weight = CatMullRom(x - fraction.x)
-                    * CatMullRom(-y + fraction.y);
-      sum_weight += weight;
-      sum += FetchPixel(pos.x, pos.y, dx, dz) * weight;
-    }
+TexelData TexQuadTreeNode::FetchPixel(double x, double y,
+                                           double dx, double dy) {
+  if (x < 0) {
+    x += sx_;
+  } else if (sx_ <= x) {
+    x -= sx_;
   }
 
-  return clamp(sum / sum_weight, 0, 65535);
+  if (y < 0) {
+    y = std::abs(y);
+  } else if (sy_ <= y) {
+    y = sy_ - (y - sy_ + 1);
+  }
+
+  TexelData ret = FetchPixelInternal(x, y, dx, dy);
+  age();
+  return ret;
+}
+
+TexelData TexQuadTreeNode::FetchPixelInternal(double x, double y,
+                                              double dx, double dy) {
+  assert (int_left_x() <= x && x < int_right_x());
+  assert (int_top_y() <= y && y < int_bottom_y());
+
+  last_used_ = 0;
+
+  load();
+  int borderless_width = tex_w_ - 2*kBorderSize;
+  int borderless_height = tex_h_ - 2*kBorderSize;
+  glm::dvec2 pixel_coverage = glm::dvec2{sx_ / borderless_width,
+                                         sy_ / borderless_height};
+
+  if (level_ == 0 || (pixel_coverage.x < dx && pixel_coverage.y < dy)) {
+    glm::ivec2 top_left = glm::ivec2(glm::floor(glm::dvec2{x, y}));
+    glm::dvec2 fraction = glm::fract(glm::dvec2{x, y});
+
+#ifdef HEIGHTMAP
+    double sum = 0.0;
+#else
+    double sum_r = 0.0, sum_g = 0.0, sum_b = 0.0;
+#endif
+
+    double sum_weight = 0.0;
+    for (int xx = -1; xx <= 2; xx++) {
+      for (int yy = -1; yy <= 2; yy++) {
+        glm::ivec2 pos = top_left + glm::ivec2(xx, yy);
+
+        int col = (pos.x - int_left_x()) / pixel_coverage.x + kBorderSize;
+        int row = (pos.y - int_top_y()) / pixel_coverage.y + kBorderSize;
+        int idx = row*tex_w_ + col;
+        assert(0 <= idx && idx < data_.size());
+        TexelData texel_value = data_[idx];
+
+        double weight = CatMullRom(xx - fraction.x)
+                      * CatMullRom(-yy + fraction.y);
+        sum_weight += weight;
+
+#ifdef HEIGHTMAP
+        sum += texel_value * weight;
+#else
+        sum_r += texel_value.r * weight;
+        sum_g += texel_value.g * weight;
+        sum_b += texel_value.b * weight;
+#endif
+      }
+    }
+
+#ifdef HEIGHTMAP
+    return static_cast<TexelData>(clamp(round(sum / sum_weight),
+        std::numeric_limits<TexelData>::min(),
+        std::numeric_limits<TexelData>::max()));
+#else
+    return TexelData{
+      static_cast<unsigned char>(clamp(round(sum_r / sum_weight),
+        std::numeric_limits<unsigned char>::min(),
+        std::numeric_limits<unsigned char>::max())),
+      static_cast<unsigned char>(clamp(round(sum_g / sum_weight),
+        std::numeric_limits<unsigned char>::min(),
+        std::numeric_limits<unsigned char>::max())),
+      static_cast<unsigned char>(clamp(round(sum_b / sum_weight),
+        std::numeric_limits<unsigned char>::min(),
+        std::numeric_limits<unsigned char>::max()))
+    };
+#endif
+  } else {
+    int idx;
+    if (x < x_) {
+      idx = y < y_ ? 0 : 2;
+    } else {
+      idx = y < y_ ? 1 : 3;
+    }
+
+    if (!children_[idx]) {
+      initChild(idx);
+    }
+    return children_[idx]->FetchPixelInternal(x, y, dx, dy);
+  }
 }
 

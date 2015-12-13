@@ -5,7 +5,12 @@
 
 int main(int argv, char** argc) {
   int tw = kInputWidth, th = kInputHeight;
-  TexQuadTreeNode tex_node (nullptr, tw/2, th/2, tw, th, 9, 0);
+  TexQuadTreeNode tex_node (nullptr, tw/2, th/2, tw, th, kInputMaxLevel, 0);
+
+  if (argv != 2) {
+    std::cerr << "Face parameter must be specified" << std::endl;
+    return -1;
+  }
 
   char face = argc[1][0];
   if ('0' <= face && face < '6') {
@@ -13,5 +18,8 @@ int main(int argv, char** argc) {
     node.GenerateImage(tex_node);
   } else {
     std::cout << "Invalid face parameter!";
+    return -1;
   }
+
+  return 0;
 }

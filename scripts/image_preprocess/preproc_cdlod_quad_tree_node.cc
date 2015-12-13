@@ -30,7 +30,7 @@ void CdlodQuadTreeNode::initChild(int i) {
 }
 
 void CdlodQuadTreeNode::GenerateImage(TexQuadTreeNode& texture) {
-  if (level_ < 8) {
+  if (level_ < kMinLevel) {
     return;
   }
 
@@ -49,7 +49,7 @@ void CdlodQuadTreeNode::GenerateImage(TexQuadTreeNode& texture) {
   }
 
   int w = kTexNodeDimension+2*kBorderSize, h = w;
-  unsigned short *image = new unsigned short[w*h]{};
+  TexelData *image = new TexelData[w*h]{};
   for (int x = 0; x < w; ++x) {
     for (int y = 0; y < h; ++y) {
       double left_x = x_ - size()/2, top_z = z_ - size()/2;
@@ -68,16 +68,16 @@ void CdlodQuadTreeNode::GenerateImage(TexQuadTreeNode& texture) {
       glm::dvec2 plane_next_sample = Cube2Plane(next_sample, face_, kFaceSize);
       glm::dvec2 diff = plane_next_sample - plane_sample;
 
-      // unsigned short value = texture.FetchPixel(glm::ivec2(plane_sample), diff);
-      unsigned short value = texture.SelectPixel(plane_sample, diff);
-
-      image[y*w + x] = value;
-      // image[y*w + x] = pow(value / 65535.0, 1/2.2) * 65535.0;
+      image[y*w + x] = texture.FetchPixel(plane_sample, diff);
     }
   }
 
   Magick::Image out;
+#ifdef HEIGHTMAP
   out.read(w, h, "I", Magick::ShortPixel, image);
+#else
+  out.read(w, h, "RGB", Magick::CharPixel, image);
+#endif
   delete[] image;
 
   std::string dir = kOutputDir + "/" + std::to_string(int(face_)) +
@@ -90,8 +90,10 @@ void CdlodQuadTreeNode::GenerateImage(TexQuadTreeNode& texture) {
 
   out.matte(false);
   out.quality(100);
+#ifdef HEIGHTMAP
   out.defineValue("png", "color-type", "0");
   out.defineValue("png", "bit-depth", "16");
+#endif
   out.write(dir + "/" + filename);
 
   for (int i = 0; i < 4; ++i) {
