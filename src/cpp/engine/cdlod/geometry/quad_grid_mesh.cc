@@ -42,6 +42,19 @@ void QuadGridMesh::setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib) {
   mesh_.setupNextNormalTexturePosAndSize(attrib);
 }
 
+void QuadGridMesh::setupCurrentDiffuseTextureIds(gl::VertexAttrib attrib) {
+  mesh_.setupCurrentDiffuseTextureIds(attrib);
+}
+void QuadGridMesh::setupCurrentDiffuseTexturePosAndSize(gl::VertexAttrib attrib) {
+  mesh_.setupCurrentDiffuseTexturePosAndSize(attrib);
+}
+void QuadGridMesh::setupNextDiffuseTextureIds(gl::VertexAttrib attrib) {
+  mesh_.setupNextDiffuseTextureIds(attrib);
+}
+void QuadGridMesh::setupNextDiffuseTexturePosAndSize(gl::VertexAttrib attrib) {
+  mesh_.setupNextDiffuseTexturePosAndSize(attrib);
+}
+
 // Adds a subquad to the render list.
 // tl = top left, br = bottom right
 void QuadGridMesh::addToRenderList(float offset_x, float offset_y,

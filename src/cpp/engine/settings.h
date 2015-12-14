@@ -9,10 +9,9 @@
 namespace engine {
 
 namespace Settings {
-  static constexpr int kLevelOffset = 0;
 
   // CDLOD nodes' extent is (1 << kNodeDimensionExp)
-  static constexpr int kNodeDimensionExp = 5;
+  static constexpr int kNodeDimensionExp = 6;
   static_assert(3 <= kNodeDimensionExp && kNodeDimensionExp <= 8, "");
   static constexpr int kNodeDimension = 1 << kNodeDimensionExp;
 
@@ -21,16 +20,24 @@ namespace Settings {
 
   static constexpr int kTexDimOffset = kTextureDimensionExp - kNodeDimensionExp;
 
-  static constexpr int kTextureBorderSize = 3;
+  static constexpr int kElevationTexBorderSize = 3;
+  static constexpr int kElevationTexSizeWithBorders =
+      kTextureDimension + 2*kElevationTexBorderSize;
+  static constexpr int kDiffuseTexBorderSize = 2;
+  static constexpr int kDiffuseTexSizeWithBorders =
+      kTextureDimension + 2*kDiffuseTexBorderSize;
 
-  static constexpr double kSmallestGeometryLodDistance = 4*kNodeDimension;
+  static constexpr int kLevelOffset = 0;
+  static constexpr int kDiffuseToElevationLevelOffset = 1;
+
+  static constexpr double kSmallestGeometryLodDistance = 2*kNodeDimension;
   static_assert(kNodeDimension <= kSmallestGeometryLodDistance, "");
 
-  static constexpr int kTextureLodOffset = 1;
-  static_assert(kTextureLodOffset+kNodeDimensionExp <= kTextureDimensionExp, "");
+  static constexpr int kNormalToGeometryLevelOffset = 3;
+  static_assert(0 <= kNormalToGeometryLevelOffset, "");
 
   static constexpr double kSmallestTextureLodDistance =
-    kSmallestGeometryLodDistance * (1 << (kTextureDimensionExp-kNodeDimensionExp-kTextureLodOffset));
+    kSmallestGeometryLodDistance * (1 << kNormalToGeometryLevelOffset);
   static_assert(kTextureDimension <= kSmallestTextureLodDistance, "");
   static_assert(kSmallestGeometryLodDistance <= kSmallestTextureLodDistance, "");
 
@@ -47,7 +54,7 @@ namespace Settings {
   static constexpr double kSphereRadius = kFaceSize / 2;
 
   static constexpr double kMtEverestHeight = 8848 * (kSphereRadius / 6371000);
-  static constexpr double kHeightScale = 5;
+  static constexpr double kHeightScale = 3;
   static constexpr double kMaxHeight = kHeightScale * kMtEverestHeight;
 
   static constexpr bool kWireFrame = false;

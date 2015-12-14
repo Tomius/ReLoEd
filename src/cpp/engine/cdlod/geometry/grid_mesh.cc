@@ -62,7 +62,7 @@ void GridMesh::setupRenderData(gl::VertexAttrib attrib) {
 void GridMesh::setupTextureIds(gl::VertexAttrib attrib, int offset) {
   gl::Bind(vao_);
   gl::Bind(aTextureIds_);
-  attrib.ipointer(2, gl::kUnsignedInt, 4*sizeof(glm::uvec2),
+  attrib.ipointer(2, gl::kUnsignedInt, 6*sizeof(glm::uvec2),
                   reinterpret_cast<const char *>(offset*sizeof(glm::uvec2)));
   attrib.divisor(1);
   attrib.enable();
@@ -72,7 +72,7 @@ void GridMesh::setupTextureIds(gl::VertexAttrib attrib, int offset) {
 void GridMesh::setupTexturePosAndSize(gl::VertexAttrib attrib, int offset) {
   gl::Bind(vao_);
   gl::Bind(aTexturePosAndSize_);
-  attrib.pointer(3, gl::kFloat, false, 4*sizeof(glm::vec3),
+  attrib.pointer(3, gl::kFloat, false, 6*sizeof(glm::vec3),
                  reinterpret_cast<const char *>(offset*sizeof(glm::vec3)));
   attrib.divisor(1);
   attrib.enable();
@@ -107,6 +107,20 @@ void GridMesh::setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib) {
   setupTexturePosAndSize(attrib, 3);
 }
 
+void GridMesh::setupCurrentDiffuseTextureIds(gl::VertexAttrib attrib) {
+  setupTextureIds(attrib, 4);
+}
+void GridMesh::setupCurrentDiffuseTexturePosAndSize(gl::VertexAttrib attrib) {
+  setupTexturePosAndSize(attrib, 4);
+}
+
+void GridMesh::setupNextDiffuseTextureIds(gl::VertexAttrib attrib) {
+  setupTextureIds(attrib, 5);
+}
+void GridMesh::setupNextDiffuseTexturePosAndSize(gl::VertexAttrib attrib) {
+  setupTexturePosAndSize(attrib, 5);
+}
+
 void GridMesh::addToRenderList(const glm::vec4& render_data,
                                const StreamedTextureInfo& texinfo) {
   render_data_.push_back(render_data);
@@ -115,6 +129,8 @@ void GridMesh::addToRenderList(const glm::vec4& render_data,
   texture_ids_.push_back(texinfo.geometry_next->id);
   texture_ids_.push_back(texinfo.normal_current->id);
   texture_ids_.push_back(texinfo.normal_next->id);
+  texture_ids_.push_back(texinfo.diffuse_current->id);
+  texture_ids_.push_back(texinfo.diffuse_next->id);
 
   texture_pos_and_size_.push_back(glm::vec3{texinfo.geometry_current->position,
                                    texinfo.geometry_current->size});
@@ -124,6 +140,10 @@ void GridMesh::addToRenderList(const glm::vec4& render_data,
                                    texinfo.normal_current->size});
   texture_pos_and_size_.push_back(glm::vec3{texinfo.normal_next->position,
                                    texinfo.normal_next->size});
+  texture_pos_and_size_.push_back(glm::vec3{texinfo.diffuse_current->position,
+                                   texinfo.diffuse_current->size});
+  texture_pos_and_size_.push_back(glm::vec3{texinfo.diffuse_next->position,
+                                   texinfo.diffuse_next->size});
 
   engine::Settings::geom_nodes_count++;
 }
