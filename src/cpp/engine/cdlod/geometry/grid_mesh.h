@@ -59,6 +59,11 @@ class GridMesh {
   void setupNextNormalTextureIds(gl::VertexAttrib attrib);
   void setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib);
 
+  void setupCurrentDiffuseTextureIds(gl::VertexAttrib attrib);
+  void setupCurrentDiffuseTexturePosAndSize(gl::VertexAttrib attrib);
+  void setupNextDiffuseTextureIds(gl::VertexAttrib attrib);
+  void setupNextDiffuseTexturePosAndSize(gl::VertexAttrib attrib);
+
   void addToRenderList(const glm::vec4& render_data,
                        const StreamedTextureInfo& texinfo);
   void clearRenderList();

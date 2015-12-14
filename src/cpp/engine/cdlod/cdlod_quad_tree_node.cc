@@ -21,7 +21,12 @@ CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z, CubeFace face,
 CdlodQuadTreeNode::~CdlodQuadTreeNode() {
   if (texture_.is_loaded_to_gpu) {
     Settings::texture_nodes_count--;
-    gl(MakeTextureHandleNonResidentARB(texture_.id));
+    if (texture_.elevation.size != 0) {
+      gl(MakeTextureHandleNonResidentARB(texture_.elevation.id));
+    }
+    if (texture_.diffuse.size != 0) {
+      gl(MakeTextureHandleNonResidentARB(texture_.diffuse.id));
+    }
   }
 }
 
@@ -53,13 +58,15 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
 
   // textures should be loaded, even if it is outside the frustum (otherwise the
   // texture lod difference of neighbour nodes can cause geometry cracks)
-  if (!bbox_.collidesWithFrustum(frustum)) { return; }
+  // if (!bbox_.collidesWithFrustum(frustum)) { return; }
 
   // If we can cover the whole area or if we are a leaf
   Sphere sphere{cam_pos, Settings::kSmallestGeometryLodDistance * scale()};
   if (!bbox_.collidesWithSphere(sphere) ||
       level_ <= Settings::kLevelOffset - Settings::kGeomDiv) {
-    grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo);
+    if (bbox_.collidesWithFrustum(frustum)) {
+      grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo);
+    }
   } else {
     bool cc[4]{}; // children collision
 
@@ -74,9 +81,11 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
       }
     }
 
-    // Render what the children didn't do
-    grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo,
-                              !cc[0], !cc[1], !cc[2], !cc[3]);
+    if (bbox_.collidesWithFrustum(frustum)) {
+      // Render what the children didn't do
+      grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo,
+                                !cc[0], !cc[1], !cc[2], !cc[3]);
+    }
   }
 }
 
@@ -86,26 +95,45 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
                                       ThreadPool& thread_pool,
                                       StreamedTextureInfo& texinfo,
                                       int recursion_level /*= 0*/) {
+  bool need_geometry = (texinfo.geometry_current == nullptr);
+  bool need_normal   = (texinfo.normal_current == nullptr);
+  bool need_diffuse  = (texinfo.diffuse_current == nullptr);
+
+  // nothing more to find
+  if (!need_geometry && !need_normal && !need_diffuse) {
+    return;
+  }
+
   if (parent_ == nullptr) {
     if (!texture_.is_loaded_to_gpu) {
       loadTexture();
       upload();
     }
 
-    texinfo.geometry_current = &texture_;
-    texinfo.geometry_next = &texture_;
-    if (texinfo.normal_current == nullptr) {
-      texinfo.normal_current = &texture_;
-      texinfo.normal_next = &texture_;
-      last_used_ = 0;
+    if (need_geometry) {
+      texinfo.geometry_current = &texture_.elevation;
+      texinfo.geometry_next = &texture_.elevation;
     }
+    if (need_normal) {
+      texinfo.normal_current = &texture_.elevation;
+      texinfo.normal_next = &texture_.elevation;
+    }
+    if (need_diffuse) {
+      texinfo.diffuse_current = &texture_.diffuse;
+      texinfo.diffuse_next = &texture_.diffuse;
+    }
+
     return;
   }
 
-  // if it is possible to get a texture from this
-  // level, and it is not too detailed
-  if (textureLevel() >= Settings::kLevelOffset &&
-      recursion_level >= Settings::kTextureLodOffset) {
+  bool too_detailed = recursion_level < Settings::kTexDimOffset - Settings::kNormalToGeometryLevelOffset;
+  bool too_detailed_for_geometry = recursion_level < Settings::kTexDimOffset;
+
+  bool can_use_geometry = need_geometry && hasElevationTexture() && !too_detailed_for_geometry;
+  bool can_use_normal = need_normal && hasElevationTexture() && !too_detailed;
+  bool can_use_diffuse = need_diffuse && hasDiffuseTexture() && !too_detailed;
+
+  if (can_use_geometry || can_use_normal || can_use_diffuse) {
     if (!texture_.is_loaded_to_gpu && texture_.is_loaded_to_memory) {
       upload();
     }
@@ -113,37 +141,29 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
     if (texture_.is_loaded_to_gpu) {
       assert(parent_->texture_.is_loaded_to_gpu);
 
-      // we found one which exists and is loaded -> perfect
-      if (texinfo.normal_current == nullptr) {
-        texinfo.normal_current = &texture_;
-        texinfo.normal_next = &parent_->texture_;
-        last_used_ = 0;
-        parent_->last_used_ = 0;
+      if (can_use_geometry) {
+        texinfo.geometry_current = &texture_.elevation;
+        texinfo.geometry_next = &parent_->texture_.elevation;
       }
 
-      if (recursion_level >= Settings::kTexDimOffset) {
-        texinfo.geometry_current = &texture_;
-        texinfo.geometry_next = &parent_->texture_;
-        last_used_ = 0;
-        parent_->last_used_ = 0;
+      if (can_use_normal) {
+        texinfo.normal_current = &texture_.elevation;
+        texinfo.normal_next = &parent_->texture_.elevation;
+      }
+
+      if (can_use_diffuse) {
+        texinfo.diffuse_current = &texture_.diffuse;
+        texinfo.diffuse_next = &parent_->texture_.diffuse;
       }
     } else {
       // this one should be used, but not yet loaded -> start async load, but
       // make do with the parent for now.
-      thread_pool.enqueue([this](){
-        loadTexture();
-      });
+      thread_pool.enqueue(level_, [this](){ loadTexture(); });
     }
   }
 
-  // if the geometry is filled we have everything we need,
-  // else we need to continue the recursion
-  if (texinfo.geometry_next == nullptr) {
-    // the current one is not loaded or does not exist, so
-    // the parent should provide the texture
-    parent_->selectTexture(cam_pos, frustum, thread_pool,
-                           texinfo, recursion_level+1);
-  }
+  parent_->selectTexture(cam_pos, frustum, thread_pool,
+                         texinfo, recursion_level+1);
 }
 
 void CdlodQuadTreeNode::age() {
@@ -161,16 +181,41 @@ void CdlodQuadTreeNode::age() {
   }
 }
 
-std::string CdlodQuadTreeNode::getHeightMapPath() const {
-  return std::string{"/media/icecool/SSData/gmted2010_75_cube"}
+std::string CdlodQuadTreeNode::getDiffuseMapPath() const {
+  assert(hasDiffuseTexture());
+  return std::string{"/home/icecool/projects/C++/OpenGL/ReLoEd/src/resources/textures/diffuse"}
          + "/" + std::to_string(int(face_))
-         + "/" + std::to_string(textureLevel())
-         + "/" + std::to_string(long(x_))
-         + "/" + std::to_string(long(z_)) + ".png";
+         + "/" + std::to_string(diffuseTextureLevel())
+         + "/" + std::to_string(long(x_) >> Settings::kDiffuseToElevationLevelOffset)
+         + "/" + std::to_string(long(z_) >> Settings::kDiffuseToElevationLevelOffset)
+         + ".png";
 }
 
-int CdlodQuadTreeNode::textureLevel() const {
+
+std::string CdlodQuadTreeNode::getHeightMapPath() const {
+  assert(hasElevationTexture());
+  return std::string{"/media/icecool/SSData/gmted2010_75_cube"}
+         + "/" + std::to_string(int(face_))
+         + "/" + std::to_string(elevationTextureLevel())
+         + "/" + std::to_string(long(x_))
+         + "/" + std::to_string(long(z_))
+         + ".png";
+}
+
+int CdlodQuadTreeNode::elevationTextureLevel() const {
   return level_ - Settings::kTexDimOffset;
+}
+
+int CdlodQuadTreeNode::diffuseTextureLevel() const {
+  return elevationTextureLevel() - Settings::kDiffuseToElevationLevelOffset;
+}
+
+bool CdlodQuadTreeNode::hasElevationTexture() const {
+  return Settings::kLevelOffset <= elevationTextureLevel();
+}
+
+bool CdlodQuadTreeNode::hasDiffuseTexture() const {
+  return Settings::kLevelOffset <= diffuseTextureLevel();
 }
 
 void CdlodQuadTreeNode::loadTexture() {
@@ -184,11 +229,23 @@ void CdlodQuadTreeNode::loadTexture() {
   std::unique_lock<std::mutex> lock{texture_.load_mutex};
 
   if (!texture_.is_loaded_to_memory) {
-    Magick::Image image{getHeightMapPath()};
-    texture_.width = image.columns(), texture_.height = image.rows();
-    texture_.data.resize(texture_.width * texture_.height);
-    image.write(0, 0, texture_.width, texture_.height,
-                "R", MagickCore::ShortPixel, texture_.data.data());
+    if (hasElevationTexture()) {
+      Magick::Image image{getHeightMapPath()};
+      assert(image.columns() == Settings::kElevationTexSizeWithBorders);
+      assert(image.rows() == Settings::kElevationTexSizeWithBorders);
+      texture_.elevation_data.resize(image.columns() * image.rows());
+      image.write(0, 0, image.columns(), image.rows(),
+                  "R", MagickCore::ShortPixel, texture_.elevation_data.data());
+    }
+
+    if (hasDiffuseTexture()) {
+      Magick::Image image{getDiffuseMapPath()};
+      assert(image.columns() == Settings::kDiffuseTexSizeWithBorders);
+      assert(image.rows() == Settings::kDiffuseTexSizeWithBorders);
+      texture_.diffuse_data.resize(image.columns() * image.rows());
+      image.write(0, 0, image.columns(), image.rows(),
+                  "RGB", MagickCore::CharPixel, texture_.diffuse_data.data());
+    }
 
     texture_.is_loaded_to_memory = true;
   }
@@ -201,27 +258,62 @@ void CdlodQuadTreeNode::upload() {
 
   assert(texture_.is_loaded_to_memory);
   if (!texture_.is_loaded_to_gpu) {
-    gl::Bind(texture_.handle);
-    texture_.handle.upload(gl::kR16, texture_.width, texture_.height,
-                           gl::kRed, gl::kUnsignedShort, texture_.data.data());
+    if (hasElevationTexture()) {
+      gl::Bind(texture_.elevation.handle);
+      texture_.elevation.handle.upload(
+          gl::kR16, Settings::kElevationTexSizeWithBorders,
+          Settings::kElevationTexSizeWithBorders, gl::kRed,
+          gl::kUnsignedShort, texture_.elevation_data.data());
 
-    texture_.handle.generateMipmap();
-    texture_.handle.maxAnisotropy();
-    texture_.handle.minFilter(gl::kLinearMipmapLinear);
-    texture_.handle.magFilter(gl::kLinear);
-    texture_.handle.wrapS(gl::kClampToEdge);
-    texture_.handle.wrapT(gl::kClampToEdge);
+      texture_.elevation.handle.generateMipmap();
+      texture_.elevation.handle.maxAnisotropy();
+      texture_.elevation.handle.minFilter(gl::kLinearMipmapLinear);
+      texture_.elevation.handle.magFilter(gl::kLinear);
+      texture_.elevation.handle.wrapS(gl::kClampToEdge);
+      texture_.elevation.handle.wrapT(gl::kClampToEdge);
 
-    texture_.id = gl(GetTextureHandleARB(texture_.handle.expose()));
-    gl(MakeTextureHandleResidentARB(texture_.id));
-    gl::Unbind(texture_.handle);
+      texture_.elevation.id =
+          gl(GetTextureHandleARB(texture_.elevation.handle.expose()));
+      gl(MakeTextureHandleResidentARB(texture_.elevation.id));
+      gl::Unbind(texture_.elevation.handle);
 
-    double scale = (Settings::kTextureDimension+2.0*Settings::kTextureBorderSize)
-                   / Settings::kTextureDimension;
-    texture_.size = scale * size();
-    texture_.position = glm::vec2(x_ - texture_.size/2, z_ - texture_.size/2);
+      double scale = static_cast<double>(Settings::kElevationTexSizeWithBorders)
+                   / static_cast<double>(Settings::kTextureDimension);
+      texture_.elevation.size = scale * size();
+      texture_.elevation.position = glm::vec2(x_ - texture_.elevation.size/2,
+                                              z_ - texture_.elevation.size/2);
 
-    texture_.data.clear();
+      texture_.elevation_data.clear();
+    }
+
+    if (hasDiffuseTexture()) {
+      gl::Bind(texture_.diffuse.handle);
+      texture_.diffuse.handle.upload(
+          gl::kRgb8, Settings::kDiffuseTexSizeWithBorders,
+          Settings::kDiffuseTexSizeWithBorders, gl::kRgb,
+          gl::kUnsignedByte, texture_.diffuse_data.data());
+
+      texture_.diffuse.handle.generateMipmap();
+      texture_.diffuse.handle.maxAnisotropy();
+      texture_.diffuse.handle.minFilter(gl::kLinearMipmapLinear);
+      texture_.diffuse.handle.magFilter(gl::kLinear);
+      texture_.diffuse.handle.wrapS(gl::kClampToEdge);
+      texture_.diffuse.handle.wrapT(gl::kClampToEdge);
+
+      texture_.diffuse.id =
+          gl(GetTextureHandleARB(texture_.diffuse.handle.expose()));
+      gl(MakeTextureHandleResidentARB(texture_.diffuse.id));
+      gl::Unbind(texture_.diffuse.handle);
+
+      double scale = static_cast<double>(Settings::kDiffuseTexSizeWithBorders)
+                   / static_cast<double>(Settings::kTextureDimension);
+      texture_.diffuse.size = scale * size();
+      texture_.diffuse.position = glm::vec2(x_ - texture_.diffuse.size/2,
+                                            z_ - texture_.diffuse.size/2);
+
+      texture_.diffuse_data.clear();
+    }
+
     texture_.is_loaded_to_gpu = true;
     Settings::texture_nodes_count++;
   }
