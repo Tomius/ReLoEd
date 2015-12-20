@@ -10,7 +10,6 @@ namespace engine {
 
 namespace Settings {
 
-  // CDLOD nodes' extent is (1 << kNodeDimensionExp)
   static constexpr int kNodeDimensionExp = 6;
   static constexpr int kNodeDimension = 1 << kNodeDimensionExp;
 
@@ -28,7 +27,7 @@ namespace Settings {
 
   static constexpr int kLevelOffset = 0;
   static constexpr int kDiffuseToElevationLevelOffset = 1;
-  static constexpr int kNormalToGeometryLevelOffset = 3;
+  static constexpr int kNormalToGeometryLevelOffset = 2;
 
   static constexpr double kSmallestGeometryLodDistance = 2*kNodeDimension;
   static constexpr double kSmallestTextureLodDistance =
@@ -46,7 +45,7 @@ namespace Settings {
   static constexpr double kSphereRadius = kFaceSize / 2;
 
   static constexpr double kMtEverestHeight = 8848 * (kSphereRadius / 6371000);
-  static constexpr double kHeightScale = 3;
+  static constexpr double kHeightScale = 5;
   static constexpr double kMaxHeight = kHeightScale * kMtEverestHeight;
 
   static constexpr bool kWireFrame = false;
@@ -58,6 +57,7 @@ namespace Settings {
   static_assert(3 <= kNodeDimensionExp && kNodeDimensionExp <= 8, "");
   static_assert(kNodeDimension <= kSmallestGeometryLodDistance, "");
   static_assert(0 <= kNormalToGeometryLevelOffset, "");
+  static_assert(kNodeDimensionExp + kNormalToGeometryLevelOffset <= kTextureDimensionExp, "");
   static_assert(kTextureDimension <= kSmallestTextureLodDistance, "");
   static_assert(kSmallestGeometryLodDistance <= kSmallestTextureLodDistance, "");
   static_assert(kGeomDiv <= 2*kNodeDimensionExp, "");

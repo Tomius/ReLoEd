@@ -14,7 +14,7 @@ CdlodQuadTreeNode::CdlodQuadTreeNode(double x, double z, CubeFace face,
     : x_(x), z_(z), face_(face), level_(level), parent_(parent) {
   double min_h = parent ? parent->texture_.min_h : 0;
   double max_h = parent ? parent->texture_.max_h : Settings::kMaxHeight;
-  bbox_ = SpherizedAABB{
+  bbox_ = SpherizedAABBDivided{
     {x-size()/2, min_h, z-size()/2},
     {x+size()/2, max_h, z+size()/2},
   face, Settings::kFaceSize};
@@ -84,10 +84,10 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
     }
 
     if (bbox_.collidesWithFrustum(frustum)) {
-    	// Render what the children didn't do
-    	grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo,
-                              	!cc[0], !cc[1], !cc[2], !cc[3]);
-	}
+      // Render what the children didn't do
+      grid_mesh.addToRenderList(x_, z_, level_, int(face_), texinfo,
+                                !cc[0], !cc[1], !cc[2], !cc[3]);
+    }
   }
 }
 
@@ -108,7 +108,7 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
 
   if (parent_ == nullptr) {
     if (!texture_.is_loaded_to_gpu) {
-      loadTexture();
+      loadTexture(true);
       upload();
     }
 
@@ -160,7 +160,7 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
     } else {
       // this one should be used, but not yet loaded -> start async load, but
       // make do with the parent for now.
-      thread_pool.enqueue(level_, [this](){ loadTexture(); });
+      thread_pool.enqueue(level_, [this](){ loadTexture(false); });
     }
   }
 
@@ -220,15 +220,22 @@ bool CdlodQuadTreeNode::hasDiffuseTexture() const {
   return Settings::kLevelOffset <= diffuseTextureLevel();
 }
 
-void CdlodQuadTreeNode::loadTexture() {
+void CdlodQuadTreeNode::loadTexture(bool synchronous_load) {
   if (parent_ && !parent_->texture_.is_loaded_to_memory) {
-    parent_->loadTexture();
+    parent_->loadTexture(synchronous_load);
   }
   if (texture_.is_loaded_to_gpu) {
     return;
   }
 
-  std::unique_lock<std::mutex> lock{texture_.load_mutex};
+  if (synchronous_load) {
+    texture_.load_mutex.lock();
+  } else {
+    if (!texture_.load_mutex.try_lock()) {
+      // someone is already loading this texture, so we should not wait on it
+      return;
+    }
+  }
 
   if (!texture_.is_loaded_to_memory) {
     if (hasElevationTexture()) {
@@ -238,7 +245,16 @@ void CdlodQuadTreeNode::loadTexture() {
       texture_.elevation_data.resize(image.columns() * image.rows());
       image.write(0, 0, image.columns(), image.rows(),
                   "R", MagickCore::ShortPixel, texture_.elevation_data.data());
-    }
+	
+	  for (GLushort height : texture_.elevation_data) {
+      	texture_.min = std::min(texture_.min, height);
+    	texture_.max = std::max(texture_.max, height);
+      }
+      texture_.min_h = texture_.min * Settings::kMaxHeight /
+                       std::numeric_limits<GLushort>::max();
+      texture_.max_h = texture_.max * Settings::kMaxHeight /
+                       std::numeric_limits<GLushort>::max();    
+	}
 
     if (hasDiffuseTexture()) {
       Magick::Image image{getDiffuseMapPath()};
@@ -250,24 +266,17 @@ void CdlodQuadTreeNode::loadTexture() {
     }
 
     texture_.is_loaded_to_memory = true;
-
-	for (GLushort height : texture_.elevation_data) {
-      texture_.min = std::min(texture_.min, height);
-      texture_.max = std::max(texture_.max, height);
-    }
-    texture_.min_h = texture_.min * Settings::kMaxHeight /
-                     std::numeric_limits<GLushort>::max();
-    texture_.max_h = texture_.max * Settings::kMaxHeight /
-                     std::numeric_limits<GLushort>::max();
   }
+
+  texture_.load_mutex.unlock();
 }
 
 void CdlodQuadTreeNode::upload() {
+  loadTexture(true);
   if (parent_ && !parent_->texture_.is_loaded_to_gpu) {
     parent_->upload();
   }
 
-  assert(texture_.is_loaded_to_memory);
   if (!texture_.is_loaded_to_gpu) {
     if (hasElevationTexture()) {
 	  refreshMinMax(texture_.min_h, texture_.max_h);
@@ -339,7 +348,7 @@ bool CdlodQuadTreeNode::collidesWithSphere(const Sphere& sphere) const {
 void CdlodQuadTreeNode::refreshMinMax(double min_h, double max_h) {
   texture_.min_h = min_h;
   texture_.max_h = max_h;
-  bbox_ = SpherizedAABB{
+  bbox_ = SpherizedAABBDivided{
     {x_-size()/2, min_h, z_-size()/2},
     {x_+size()/2, max_h, z_+size()/2},
   face_, Settings::kFaceSize};

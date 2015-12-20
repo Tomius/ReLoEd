@@ -18,12 +18,17 @@ std::unique_ptr<T> make_unique() {
 }
 
 template<typename T>
-T sqr(const T& x) {
+constexpr T sqr(const T& x) {
   return x*x;
 }
 
 template<typename T>
-T clamp(const T& x, const T& min, const T& max) {
+constexpr T cube(const T& x) {
+  return x*x*x;
+}
+
+template<typename T>
+constexpr T clamp(const T& x, const T& min, const T& max) {
   // assert(min < max);
   if (x < min) { return min; }
   if (x > max) { return max; }

@@ -34,7 +34,7 @@ class CdlodQuadTreeNode {
   double x_, z_;
   CubeFace face_;
   int level_;
-  SpherizedAABB bbox_;
+  SpherizedAABBDivided bbox_;
   CdlodQuadTreeNode* parent_;
   std::unique_ptr<CdlodQuadTreeNode> children_[4];
   int last_used_ = 0;
@@ -61,7 +61,7 @@ class CdlodQuadTreeNode {
   bool hasElevationTexture() const;
   bool hasDiffuseTexture() const;
 
-  void loadTexture();
+  void loadTexture(bool synchronous_load);
   void upload();
   void refreshMinMax(double min_h, double max_h);
 };
