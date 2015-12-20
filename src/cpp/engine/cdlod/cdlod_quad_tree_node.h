@@ -63,7 +63,7 @@ class CdlodQuadTreeNode {
   bool hasElevationTexture() const;
   bool hasDiffuseTexture() const;
 
-  void loadTexture();
+  void loadTexture(bool synchronous_load);
   void upload();
 };
 

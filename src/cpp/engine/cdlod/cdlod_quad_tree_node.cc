@@ -106,7 +106,7 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
 
   if (parent_ == nullptr) {
     if (!texture_.is_loaded_to_gpu) {
-      loadTexture();
+      loadTexture(true);
       upload();
     }
 
@@ -158,7 +158,7 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
     } else {
       // this one should be used, but not yet loaded -> start async load, but
       // make do with the parent for now.
-      thread_pool.enqueue(level_, [this](){ loadTexture(); });
+      thread_pool.enqueue(level_, [this](){ loadTexture(false); });
     }
   }
 
@@ -218,15 +218,22 @@ bool CdlodQuadTreeNode::hasDiffuseTexture() const {
   return Settings::kLevelOffset <= diffuseTextureLevel();
 }
 
-void CdlodQuadTreeNode::loadTexture() {
+void CdlodQuadTreeNode::loadTexture(bool synchronous_load) {
   if (parent_ && !parent_->texture_.is_loaded_to_memory) {
-    parent_->loadTexture();
+    parent_->loadTexture(synchronous_load);
   }
   if (texture_.is_loaded_to_gpu) {
     return;
   }
 
-  std::unique_lock<std::mutex> lock{texture_.load_mutex};
+  if (synchronous_load) {
+    texture_.load_mutex.lock();
+  } else {
+    if (!texture_.load_mutex.try_lock()) {
+      // someone is already loading this texture, so we should not wait on it
+      return;
+    }
+  }
 
   if (!texture_.is_loaded_to_memory) {
     if (hasElevationTexture()) {
@@ -249,14 +256,16 @@ void CdlodQuadTreeNode::loadTexture() {
 
     texture_.is_loaded_to_memory = true;
   }
+
+  texture_.load_mutex.unlock();
 }
 
 void CdlodQuadTreeNode::upload() {
+  loadTexture(true);
   if (parent_ && !parent_->texture_.is_loaded_to_gpu) {
     parent_->upload();
   }
 
-  assert(texture_.is_loaded_to_memory);
   if (!texture_.is_loaded_to_gpu) {
     if (hasElevationTexture()) {
       gl::Bind(texture_.elevation.handle);
