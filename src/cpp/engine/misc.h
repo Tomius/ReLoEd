@@ -18,8 +18,13 @@ std::unique_ptr<T> make_unique() {
 }
 
 template<typename T>
-T sqr(const T& x) {
+constexpr T sqr(const T& x) {
   return x*x;
+}
+
+template<typename T>
+constexpr T cube(const T& x) {
+  return x*x*x;
 }
 
 constexpr double kEpsilon = 1e-5;

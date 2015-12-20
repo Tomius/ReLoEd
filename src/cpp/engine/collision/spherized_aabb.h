@@ -10,24 +10,17 @@
 
 namespace engine {
 
-struct Interval {
-  double min;
-  double max;
-};
-
-static inline bool HasIntersection(const Interval& a, const Interval& b) {
-  return a.min - kEpsilon < b.max && b.min - kEpsilon < a.max;
-}
-
 class SpherizedAABB {
+  struct Interval {
+    double min;
+    double max;
+  };
+
   Sphere bsphere_;
 
   glm::dvec3 normals_[4];
   Interval extents_[4];
   Interval radial_extent_;
-
-  glm::dvec3 dir_to_center_;
-  double angle_;
 
  public:
   SpherizedAABB() = default;
@@ -91,8 +84,6 @@ class SpherizedAABB {
       vertices[i] = Cube2Sphere(m_vertices[i], face, face_size);
     }
     glm::dvec3 center = Cube2Sphere((mins + maxes)/2.0, face, face_size);
-    dir_to_center_ = normalize(center);
-    angle_ = acos(dot(dir_to_center_, normalize(vertices[A])));
 
     double bsphere_radius = 0;
     for (const glm::dvec3& vertex : vertices) {
@@ -133,6 +124,9 @@ class SpherizedAABB {
     return normalize(cross(ba, dc));
   }
 
+  static inline bool HasIntersection(const Interval& a, const Interval& b) {
+    return a.min - kEpsilon < b.max && b.min - kEpsilon < a.max;
+  }
 
   static Interval getExtent(const glm::dvec3& normal,
                             const glm::dvec3& m_space_min,
@@ -177,26 +171,65 @@ class SpherizedAABB {
       }
     }
 
-    // another weird heuristics
-    double sum_radius = radial_extent_.max + sphere.radius();
-    double contraction = sum_radius - radial_interval_center;
-    assert(contraction >= 0);
-    if (contraction < radial_extent_.max) {
-      double ratio = radial_extent_.max / sum_radius;
-      double d = radial_interval_center - sphere.radius() + ratio * contraction;
-      double cos_ang = d / radial_extent_.max;
-      double ang = acos(cos_ang);
-
-      if (dot(dir_to_center_, normalize(sphere.center())) < cos(ang + angle_)) {
-        return false;
-      }
-    }
-
     return true;
   }
 
   bool collidesWithFrustum(const Frustum& frustum) const {
     return bsphere_.collidesWithFrustum(frustum);
+  }
+};
+
+constexpr int kAabbSubdivisionRate = 3;
+
+class SpherizedAABBDivided {
+  SpherizedAABB main_;
+  SpherizedAABB subs_[cube(kAabbSubdivisionRate)];
+
+public:
+  SpherizedAABBDivided() = default;
+
+  SpherizedAABBDivided(const glm::dvec3& mins, const glm::dvec3& maxes,
+                       CubeFace face, double face_size)
+      : main_(mins, maxes, face, face_size) {
+    glm::dvec3 sub_extent = (maxes - mins) / static_cast<double>(kAabbSubdivisionRate);
+    for (int x = 0; x < kAabbSubdivisionRate; ++x) {
+      for (int y = 0; y < kAabbSubdivisionRate; ++y) {
+        for (int z = 0; z < kAabbSubdivisionRate; ++z) {
+          glm::dvec3 sub_min = mins + glm::dvec3{x, y, z} * sub_extent;
+          glm::dvec3 sub_max = sub_min + sub_extent;
+          subs_[sqr(kAabbSubdivisionRate)*x + kAabbSubdivisionRate*y + z]
+              = SpherizedAABB{sub_min, sub_max, face, face_size};
+        }
+      }
+    }
+  }
+
+  bool collidesWithSphere(const Sphere& sphere) const {
+    if (!main_.collidesWithSphere(sphere)) {
+      return false;
+    }
+
+    for (const SpherizedAABB& sub : subs_) {
+      if (sub.collidesWithSphere(sphere)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool collidesWithFrustum(const Frustum& frustum) const {
+    if (!main_.collidesWithFrustum(frustum)) {
+      return false;
+    }
+
+    for (const SpherizedAABB& sub : subs_) {
+      if (sub.collidesWithFrustum(frustum)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 };
 

@@ -45,7 +45,7 @@ namespace Settings {
   static constexpr double kSphereRadius = kFaceSize / 2;
 
   static constexpr double kMtEverestHeight = 8848 * (kSphereRadius / 6371000);
-  static constexpr double kHeightScale = 3;
+  static constexpr double kHeightScale = 5;
   static constexpr double kMaxHeight = kHeightScale * kMtEverestHeight;
 
   static constexpr bool kWireFrame = false;
