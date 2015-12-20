@@ -11,9 +11,9 @@ struct Plane {
   double dist;
   Plane() = default;
   Plane(double nx, double ny, double nz, double dist)
-      : normal(nx, ny, nz), dist(dist) { }
+      : normal(nx, ny, nz), dist(dist) { normalize(); }
   Plane(const glm::dvec3& normal, double dist)
-      : normal(normal), dist(dist) { }
+      : normal(normal), dist(dist) { normalize(); }
 
   void normalize() {
     double l = glm::length(normal);

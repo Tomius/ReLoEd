@@ -20,7 +20,6 @@ class QuadGridMesh {
 
   void setupPositions(gl::VertexAttrib attrib);
   void setupRenderData(gl::VertexAttrib attrib);
-  void setupMinMax(gl::VertexAttrib attrib);
 
   void setupCurrentGeometryTextureIds(gl::VertexAttrib attrib);
   void setupCurrentGeometryTexturePosAndSize(gl::VertexAttrib attrib);
@@ -32,13 +31,18 @@ class QuadGridMesh {
   void setupNextNormalTextureIds(gl::VertexAttrib attrib);
   void setupNextNormalTexturePosAndSize(gl::VertexAttrib attrib);
 
+  void setupCurrentDiffuseTextureIds(gl::VertexAttrib attrib);
+  void setupCurrentDiffuseTexturePosAndSize(gl::VertexAttrib attrib);
+  void setupNextDiffuseTextureIds(gl::VertexAttrib attrib);
+  void setupNextDiffuseTexturePosAndSize(gl::VertexAttrib attrib);
+
   // Adds a subquad to the render list. tl = top left, br = bottom right
   void addToRenderList(float offset_x, float offset_y, int level, int face,
-                       const glm::vec2& minmax, const StreamedTextureInfo& texinfo,
+                       const StreamedTextureInfo& texinfo,
                        bool tl, bool tr, bool bl, bool br);
   // Adds all four subquads
   void addToRenderList(float offset_x, float offset_y, int level, int face,
-                       const glm::vec2& minmax, const StreamedTextureInfo& texinfo);
+                       const StreamedTextureInfo& texinfo);
   void clearRenderList();
   void render();
   size_t node_count() const;

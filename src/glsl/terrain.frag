@@ -14,8 +14,12 @@ in VertexData {
   vec3  c_pos, w_pos, m_pos;
   float morph; // can be useful for debugging
   flat int face;
-  flat uvec2 current_tex_id, next_tex_id;
-  flat vec3 current_tex_pos_and_size, next_tex_pos_and_size;
+
+  flat uvec2 current_normal_tex_id, next_normal_tex_id;
+  flat vec3 current_normal_tex_pos_and_size, next_normal_tex_pos_and_size;
+
+  flat uvec2 current_diffuse_tex_id, next_diffuse_tex_id;
+  flat vec3 current_diffuse_tex_pos_and_size, next_diffuse_tex_pos_and_size;
 } vIn;
 
 uniform int Terrain_uMaxHeight;
@@ -43,17 +47,17 @@ vec3 GetNormalModelSpaceInternal(vec2 pos, uvec2 tex_id, vec3 tex_pos_and_size) 
 
 vec3 GetNormalModelSpace(vec2 pos) {
   float dist = length(vIn.c_pos);
-  float next_dist = vIn.next_tex_pos_and_size.z
+  float next_dist = vIn.next_normal_tex_pos_and_size.z
       / Terrain_uTextureDimension * Terrain_uSmallestTextureLodDistance;
   float morph = smoothstep(kMorphStart*next_dist, kMorphEnd*next_dist, dist);
-  vec3 normal0 = GetNormalModelSpaceInternal(pos, vIn.current_tex_id,
-                                              vIn.current_tex_pos_and_size);
+  vec3 normal0 = GetNormalModelSpaceInternal(pos, vIn.current_normal_tex_id,
+                                              vIn.current_normal_tex_pos_and_size);
   if (morph == 0.0) {
     return normal0;
   }
 
-  vec3 normal1 = GetNormalModelSpaceInternal(pos, vIn.next_tex_id,
-                                             vIn.next_tex_pos_and_size);
+  vec3 normal1 = GetNormalModelSpaceInternal(pos, vIn.next_normal_tex_id,
+                                             vIn.next_normal_tex_pos_and_size);
 
   return mix(normal0, normal1, morph);
 }
@@ -63,18 +67,46 @@ vec3 GetNormal(vec2 pos) {
        - Terrain_worldPos(vIn.m_pos, vIn.face);
 }
 
+// Color
+
+// todo remove code duplication
+vec3 GetColor(vec2 pos, uvec2 tex_id, vec3 tex_pos_and_size) {
+  vec2 sample = (pos - tex_pos_and_size.xy) / tex_pos_and_size.z;
+  sample += 0.5 / Terrain_uTextureDimensionWBorders;
+  return textureBicubic(sampler2D(tex_id), sample).rgb;
+}
+
+vec3 GetDiffuseColor(vec2 pos) {
+  float dist = length(vIn.c_pos);
+  float next_dist = vIn.next_diffuse_tex_pos_and_size.z
+      / Terrain_uTextureDimension * Terrain_uSmallestTextureLodDistance;
+  float morph = smoothstep(kMorphStart*next_dist, kMorphEnd*next_dist, dist);
+  vec3 diffuse0 = GetColor(pos, vIn.current_diffuse_tex_id,
+                           vIn.current_diffuse_tex_pos_and_size);
+  if (morph == 0.0) {
+    return diffuse0;
+  }
+
+  vec3 diffuse1 = GetColor(pos, vIn.next_diffuse_tex_id,
+                           vIn.next_diffuse_tex_pos_and_size);
+
+  return mix(diffuse0, diffuse1, morph);
+}
+
+// main
+
 void main() {
   float lighting = dot(GetNormal(vIn.m_pos.xz), SunPos());
-  float luminance = 0.2 + 0.6*max(lighting, 0) + 0.2 * (1+lighting)/2;
-  vec3 diffuse = vec3(0.0);
-  if (vIn.face/2 == 0) {
-    diffuse = vec3(1, 0.9, 0.9);
-  } else if (vIn.face/2 == 1) {
-    diffuse = vec3(0.9, 1, 0.9);
-  } else if (vIn.face/2 == 2) {
-    diffuse = vec3(0.9, 0.9, 1);
-  }
+  float luminance = 0.1 + max(lighting, 0) + 0.1 * (1+lighting)/2;
+  vec3 diffuse = GetDiffuseColor(vIn.m_pos.xz);
+  // if (vIn.face/2 == 0) {
+  //   diffuse = vec3(1, 0.9, 0.9);
+  // } else if (vIn.face/2 == 1) {
+  //   diffuse = vec3(0.9, 1, 0.9);
+  // } else if (vIn.face/2 == 2) {
+  //   diffuse = vec3(0.9, 0.9, 1);
+  // }
   fragColor = vec4(luminance*diffuse, 1);
-  // fragColor = vec4(luminance*diffuse.rb, vIn.morph, 1);
+  // fragColor = vec4(luminance*diffuse.rg, 0.9*luminance*diffuse.b + 0.1*vIn.morph, 1);
   fragDepth = length(vIn.c_pos);
 }

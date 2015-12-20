@@ -6,7 +6,6 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include "../misc.h"
-#include "./bounding_box.h"
 
 namespace engine {
 
@@ -15,10 +14,6 @@ enum class CubeFace {
 };
 
 glm::dvec3 Cube2Sphere(const glm::dvec3& pos, CubeFace face, double kFaceSize);
-BoundingBox Cube2Sphere(const BoundingBox& bbox, CubeFace face, double kFaceSize);
-
-glm::dvec3 Sphere2Cube(const glm::dvec3& pos);
-BoundingBox Plane2Cube(const BoundingBox& bbox, CubeFace face, double kFaceSize);
 
 }
 

@@ -4,7 +4,7 @@
 #define ENGINE_COLLISION_SPHERIZED_AABB_H_
 
 #include "../misc.h"
-#include "./bounding_box.h"
+#include "./sphere.h"
 #include "./cube2sphere.h"
 #include "../settings.h"
 
@@ -20,7 +20,7 @@ static inline bool HasIntersection(const Interval& a, const Interval& b) {
 }
 
 class SpherizedAABB {
-  BoundingBox aabb_;
+  Sphere bsphere_;
 
   glm::dvec3 normals_[4];
   Interval extents_[4];
@@ -32,12 +32,10 @@ class SpherizedAABB {
  public:
   SpherizedAABB() = default;
 
-  SpherizedAABB(const BoundingBox& bbox, CubeFace face, double kFaceSize)
-      : aabb_ {Cube2Sphere(bbox, face, kFaceSize)} {
+  SpherizedAABB(const glm::dvec3& mins, const glm::dvec3& maxes,
+                CubeFace face, double face_size) {
     using namespace glm;
 
-    const glm::dvec3& mins = bbox.mins();
-    const glm::dvec3& maxes = bbox.maxes();
     double radius = Settings::kSphereRadius;
     radial_extent_ = {radius + mins.y, radius + maxes.y};
 
@@ -90,10 +88,17 @@ class SpherizedAABB {
 
     glm::dvec3 vertices[8];
     for (int i = 0; i < 8; ++i) {
-      vertices[i] = Cube2Sphere(m_vertices[i], face, kFaceSize);
+      vertices[i] = Cube2Sphere(m_vertices[i], face, face_size);
     }
-    dir_to_center_ = normalize(Cube2Sphere(bbox.center(), face, kFaceSize));
+    glm::dvec3 center = Cube2Sphere((mins + maxes)/2.0, face, face_size);
+    dir_to_center_ = normalize(center);
     angle_ = acos(dot(dir_to_center_, normalize(vertices[A])));
+
+    double bsphere_radius = 0;
+    for (const glm::dvec3& vertex : vertices) {
+      bsphere_radius = std::max(bsphere_radius, glm::length(center - vertex));
+    }
+    bsphere_ = Sphere(center, bsphere_radius);
 
     enum {
       Front = 0, Right = 1, Back = 2, Left = 3
@@ -106,13 +111,13 @@ class SpherizedAABB {
     normals_[Left]  = GetNormal(vertices, H, G, F, G);
 
     extents_[Front] =
-      getExtent(normals_[Front], m_vertices[B], m_vertices[A], face, kFaceSize);
+      getExtent(normals_[Front], m_vertices[B], m_vertices[A], face, face_size);
     extents_[Right] =
-      getExtent(normals_[Right], m_vertices[A], m_vertices[E], face, kFaceSize);
+      getExtent(normals_[Right], m_vertices[A], m_vertices[E], face, face_size);
     extents_[Back]  =
-      getExtent(normals_[Back],  m_vertices[H], m_vertices[G], face, kFaceSize);
+      getExtent(normals_[Back],  m_vertices[H], m_vertices[G], face, face_size);
     extents_[Left]  =
-      getExtent(normals_[Left],  m_vertices[F], m_vertices[B], face, kFaceSize);
+      getExtent(normals_[Left],  m_vertices[F], m_vertices[B], face, face_size);
   }
 
   static glm::dvec3 GetNormal(glm::dvec3 vertices[], int a, int b, int c, int d) {
@@ -132,11 +137,11 @@ class SpherizedAABB {
   static Interval getExtent(const glm::dvec3& normal,
                             const glm::dvec3& m_space_min,
                             const glm::dvec3& m_space_max,
-                            CubeFace face, double kFaceSize) {
+                            CubeFace face, double face_size) {
     Interval interval;
     glm::dvec3 diff = m_space_max - m_space_min;
     for (int i = 0; i <= 4; ++i) {
-      glm::dvec3 current = Cube2Sphere(m_space_min + i/4.0*diff, face, kFaceSize);
+      glm::dvec3 current = Cube2Sphere(m_space_min + i/4.0*diff, face, face_size);
       double current_projection = dot(current, normal);
       if (i == 0) {
         interval.min = current_projection;
@@ -151,6 +156,10 @@ class SpherizedAABB {
   }
 
   bool collidesWithSphere(const Sphere& sphere) const {
+    if (!bsphere_.collidesWithSphere(sphere)) {
+      return false;
+    }
+
     double radial_interval_center = length(sphere.center());
     Interval radial_extent = {radial_interval_center - sphere.radius(),
                               radial_interval_center + sphere.radius()};
@@ -183,27 +192,11 @@ class SpherizedAABB {
       }
     }
 
-    // some weird heuristics
-    double sum_radius = radial_extent_.max + sphere.radius();
-    double contraction = sum_radius - radial_interval_center;
-    assert(contraction >= 0);
-    if (contraction < radial_extent_.max) {
-      double ratio = radial_extent_.max / sum_radius;
-      double d = radial_interval_center - sphere.radius() + ratio * contraction;
-      double cos_ang = d / radial_extent_.max;
-      assert(-1.001 <= cos_ang && cos_ang <= 1.001);
-      double ang = acos(cos_ang);
-
-      if (dot(dir_to_center_, normalize(sphere.center())) < cos(ang + angle_)) {
-        return false;
-      }
-    }
-
-    return aabb_.collidesWithSphere(sphere);
+    return true;
   }
 
   bool collidesWithFrustum(const Frustum& frustum) const {
-    return aabb_.collidesWithFrustum(frustum);
+    return bsphere_.collidesWithFrustum(frustum);
   }
 };
 

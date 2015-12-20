@@ -16,7 +16,7 @@ CdlodTerrain::CdlodTerrain(engine::ShaderManager* manager)
         {Settings::kFaceSize, CubeFace::kPosZ},
         {Settings::kFaceSize, CubeFace::kNegZ}
       }
-    , thread_pool_{1}
+    , thread_pool_{4}
 { }
 
 void CdlodTerrain::setup(const gl::Program& program) {
@@ -26,7 +26,6 @@ void CdlodTerrain::setup(const gl::Program& program) {
 
   mesh_.setupPositions(program | "Terrain_aPosition");
   mesh_.setupRenderData(program | "Terrain_aRenderData");
-  mesh_.setupMinMax(program | "Terrain_aMinMax");
 
   mesh_.setupCurrentGeometryTextureIds(
       program | "Terrain_aCurrentGeometryTextureId");
@@ -46,6 +45,15 @@ void CdlodTerrain::setup(const gl::Program& program) {
   mesh_.setupNextNormalTexturePosAndSize(
       program | "Terrain_aNextNormalTexturePosAndSize");
 
+  mesh_.setupCurrentDiffuseTextureIds(
+      program | "Terrain_aCurrentDiffuseTextureId");
+  mesh_.setupCurrentDiffuseTexturePosAndSize(
+      program | "Terrain_aCurrentDiffuseTexturePosAndSize");
+  mesh_.setupNextDiffuseTextureIds(
+      program | "Terrain_aNextDiffuseTextureId");
+  mesh_.setupNextDiffuseTexturePosAndSize(
+      program | "Terrain_aNextDiffuseTexturePosAndSize");
+
   uCamPos_ = engine::make_unique<gl::LazyUniform<glm::vec3>>(
       program, "Terrain_uCamPos");
 
@@ -61,6 +69,9 @@ void CdlodTerrain::setup(const gl::Program& program) {
   gl::Uniform<float>(program, "Terrain_uSmallestTextureLodDistance") =
       Settings::kSmallestTextureLodDistance;
 
+  gl::Uniform<int>(program, "Terrain_uLevelOffset") =
+      Settings::kLevelOffset;
+
   gl::Uniform<int>(program, "Terrain_uMaxLoadLevel") =
       faces_[0].max_node_level();
 
@@ -68,7 +79,7 @@ void CdlodTerrain::setup(const gl::Program& program) {
       Settings::kTextureDimension;
 
   gl::Uniform<int>(program, "Terrain_uTextureDimensionWBorders") =
-      Settings::kTextureDimension + 2*Settings::kTextureBorderSize;
+      Settings::kElevationTexSizeWithBorders;
 }
 
 void CdlodTerrain::render(Camera const& cam) {

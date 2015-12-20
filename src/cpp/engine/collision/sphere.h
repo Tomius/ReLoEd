@@ -29,6 +29,7 @@ class Sphere {
     return dist < radius_ + sphere.radius_;
   }
 
+  // http://www.flipcode.com/archives/Frustum_Culling.shtml
   virtual bool collidesWithFrustum(const Frustum& frustum) const {
     // calculate our distances to each of the planes
     for (int i = 0; i < 6; ++i) {

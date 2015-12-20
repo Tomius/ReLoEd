@@ -42,7 +42,7 @@ class CdlodQuadTreeNode {
   TextureInfo texture_;
 
   // If a node is not used for this much time (frames), it will be unloaded.
-  static const int kTimeToLiveInMemory = 1 << 8;
+  static const int kTimeToLiveInMemory = 1 << 4;
 
   // --- functions ---
 
@@ -53,7 +53,14 @@ class CdlodQuadTreeNode {
 
   void initChild(int i);
   std::string getHeightMapPath() const;
-  int textureLevel() const;
+  std::string getDiffuseMapPath() const;
+
+  int elevationTextureLevel() const;
+  int diffuseTextureLevel() const;
+
+  bool hasElevationTexture() const;
+  bool hasDiffuseTexture() const;
+
   void loadTexture();
   void upload();
   void refreshMinMax(double min_h, double max_h);
