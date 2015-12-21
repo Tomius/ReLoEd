@@ -25,7 +25,7 @@ uniform float Terrain_uSmallestGeometryLodDistance;
 
 uniform int Terrain_uMaxHeight;
 
-const float kMorphEnd = 0.90, kMorphStart = 0.85;
+const float kMorphEnd = 0.95, kMorphStart = 0.65;
 vec2 Terrain_offset = Terrain_aRenderData.xy;
 float Terrain_level = Terrain_aRenderData.z;
 float Terrain_scale = pow(2, Terrain_level);

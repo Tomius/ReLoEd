@@ -63,7 +63,8 @@ class CdlodQuadTreeNode {
 
   void loadTexture(bool synchronous_load);
   void upload();
-  void refreshMinMax(double min_h, double max_h);
+  void calculateMinMax();
+  void refreshMinMax();
 };
 
 }

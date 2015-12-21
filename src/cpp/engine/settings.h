@@ -60,7 +60,7 @@ namespace Settings {
   static_assert(kNodeDimensionExp + kNormalToGeometryLevelOffset <= kTextureDimensionExp, "");
   static_assert(kTextureDimension <= kSmallestTextureLodDistance, "");
   static_assert(kSmallestGeometryLodDistance <= kSmallestTextureLodDistance, "");
-  static_assert(kGeomDiv <= 2*kNodeDimensionExp, "");
+  static_assert(kGeomDiv < kNodeDimensionExp, "");
 };
 
 }  // namespace engine

@@ -22,6 +22,8 @@ struct TextureBaseInfo {
   gl::Texture2D handle;
 };
 
+class CdlodQuadTreeNode;
+
 struct TextureInfo {
   TextureBaseInfo elevation, diffuse;
 
@@ -30,7 +32,9 @@ struct TextureInfo {
   double min_h = 0;
   double max_h = Settings::kMaxHeight;
 
-  std::vector<unsigned short> elevation_data;
+  CdlodQuadTreeNode* min_max_src = nullptr;
+
+  std::vector<GLushort> elevation_data;
   std::vector<RGBPixel> diffuse_data;
   bool is_loaded_to_gpu = false;
 
