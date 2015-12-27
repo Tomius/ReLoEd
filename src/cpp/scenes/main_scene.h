@@ -68,6 +68,28 @@ class MainScene : public engine::Scene {
           tp_camera_ = nullptr;
           set_camera(free_fly_camera_);
         }
+      } else if (key == GLFW_KEY_KP_9) {
+        removeComponent(camera());
+        tp_camera_ = nullptr;
+
+        double old_radius = 27501;
+        double radius = engine::Settings::kSphereRadius;
+        double scale = radius / old_radius;
+        free_fly_camera_ = addComponent<engine::FreeFlyCamera>(
+            M_PI/3, 2, 3*radius, scale * glm::dvec3{-18829.6, 19925.4, 3163.6},
+            scale * glm::dvec3{-18829.101141, 19925.3065359, 3164.461629}, 0, 0);
+        set_camera(free_fly_camera_);
+      } else if (key == GLFW_KEY_KP_8) {
+        removeComponent(camera());
+        tp_camera_ = nullptr;
+
+        double old_radius = 27501;
+        double radius = engine::Settings::kSphereRadius;
+        double scale = radius / old_radius;
+        free_fly_camera_ = addComponent<engine::FreeFlyCamera>(
+            M_PI/3, 2, 3*radius, scale * glm::dvec3{-9943.69, 16404.8, 20361.8},
+            scale * glm::dvec3{-9942.71, 16404.6, 20361.7}, 50, 0);
+        set_camera(free_fly_camera_);
       } else if (key == GLFW_KEY_KP_1) {
         engine::Settings::render = !engine::Settings::render;
       } else if (key == GLFW_KEY_KP_2) {

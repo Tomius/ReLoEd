@@ -179,7 +179,7 @@ class SpherizedAABB {
   }
 };
 
-constexpr int kAabbSubdivisionRate = 3;
+constexpr int kAabbSubdivisionRate = 2;
 
 class SpherizedAABBDivided {
   SpherizedAABB main_;

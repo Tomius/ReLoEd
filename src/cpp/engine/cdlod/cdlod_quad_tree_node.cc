@@ -234,24 +234,29 @@ void CdlodQuadTreeNode::loadTexture(bool synchronous_load) {
   }
 
   if (!texture_.is_loaded_to_memory) {
-    if (hasElevationTexture()) {
-      Magick::Image image{getHeightMapPath()};
-      assert(image.columns() == Settings::kElevationTexSizeWithBorders);
-      assert(image.rows() == Settings::kElevationTexSizeWithBorders);
-      texture_.elevation_data.resize(image.columns() * image.rows());
-      image.write(0, 0, image.columns(), image.rows(),
-                  "R", MagickCore::ShortPixel, texture_.elevation_data.data());
+    try {
+      if (hasElevationTexture()) {
+        Magick::Image image{getHeightMapPath()};
+        assert(image.columns() == Settings::kElevationTexSizeWithBorders);
+        assert(image.rows() == Settings::kElevationTexSizeWithBorders);
+        texture_.elevation_data.resize(image.columns() * image.rows());
+        image.write(0, 0, image.columns(), image.rows(),
+                    "R", MagickCore::ShortPixel, texture_.elevation_data.data());
 
-	    calculateMinMax();
-    }
+  	    calculateMinMax();
+      }
 
-    if (hasDiffuseTexture()) {
-      Magick::Image image{getDiffuseMapPath()};
-      assert(image.columns() == Settings::kDiffuseTexSizeWithBorders);
-      assert(image.rows() == Settings::kDiffuseTexSizeWithBorders);
-      texture_.diffuse_data.resize(image.columns() * image.rows());
-      image.write(0, 0, image.columns(), image.rows(),
-                  "RGB", MagickCore::CharPixel, texture_.diffuse_data.data());
+      if (hasDiffuseTexture()) {
+        Magick::Image image{getDiffuseMapPath()};
+        assert(image.columns() == Settings::kDiffuseTexSizeWithBorders);
+        assert(image.rows() == Settings::kDiffuseTexSizeWithBorders);
+        texture_.diffuse_data.resize(image.columns() * image.rows());
+        image.write(0, 0, image.columns(), image.rows(),
+                    "RGB", MagickCore::CharPixel, texture_.diffuse_data.data());
+      }
+    } catch (std::exception& ex) {
+      std::cout << ex.what() << std::endl;
+      std::terminate();
     }
 
     texture_.is_loaded_to_memory = true;
