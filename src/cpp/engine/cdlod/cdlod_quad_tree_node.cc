@@ -141,7 +141,11 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
 
       if (can_use_geometry) {
         texinfo.geometry_current = &texture_.elevation;
-        texinfo.geometry_next = &parent_->texture_.elevation;
+        if (recursion_level == Settings::kTexDimOffset) {
+          texinfo.geometry_next = &parent_->texture_.elevation;
+        } else {
+          texinfo.geometry_next = &texture_.elevation;
+        }
       }
 
       if (can_use_normal) {
@@ -170,7 +174,7 @@ void CdlodQuadTreeNode::age() {
   for (auto& child : children_) {
     if (child) {
       // unload child if its age would exceed the ttl
-      if (child->last_used_ >= kTimeToLiveInMemory) {
+      if (child->last_used_ > kTimeToLiveInMemory) {
         child.reset();
       } else {
         child->age();
