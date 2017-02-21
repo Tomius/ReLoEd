@@ -185,7 +185,7 @@ void CdlodQuadTreeNode::age() {
 
 std::string CdlodQuadTreeNode::getDiffuseMapPath() const {
   assert(hasDiffuseTexture());
-  return std::string{"/home/icecool/projects/C++/OpenGL/ReLoEd/src/resources/textures/diffuse"}
+  return std::string{"/media/icecool/Data/LoE_datasets/diffuse/blue_marble_next_gen/cube"}
          + "/" + std::to_string(int(face_))
          + "/" + std::to_string(diffuseTextureLevel())
          + "/" + std::to_string(long(x_) >> Settings::kDiffuseToElevationLevelOffset)
@@ -196,7 +196,7 @@ std::string CdlodQuadTreeNode::getDiffuseMapPath() const {
 
 std::string CdlodQuadTreeNode::getHeightMapPath() const {
   assert(hasElevationTexture());
-  return std::string{"/media/icecool/SSData/gmted2010_75_cube"}
+  return std::string{"/media/icecool/Data/LoE_datasets/height/gmted2010_75/cube"}
          + "/" + std::to_string(int(face_))
          + "/" + std::to_string(elevationTextureLevel())
          + "/" + std::to_string(long(x_))

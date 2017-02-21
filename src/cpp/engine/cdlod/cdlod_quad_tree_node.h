@@ -18,6 +18,8 @@ class CdlodQuadTreeNode {
                     CdlodQuadTreeNode* parent = nullptr);
   ~CdlodQuadTreeNode();
 
+  CdlodQuadTreeNode(CdlodQuadTreeNode&&) = default;
+
   void age();
   void selectNodes(const glm::vec3& cam_pos,
                    const Frustum& frustum,

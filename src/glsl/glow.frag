@@ -76,7 +76,7 @@ vec3 ToneMap(vec3 color) {
     return color;
   }
 
-  float newLuminance = ToneMap_Internal(color) / ToneMap_Internal(11.2);
+  float newLuminance = ToneMap_Internal(luminance) / ToneMap_Internal(11.2);
   return color * newLuminance / luminance;
 }
 

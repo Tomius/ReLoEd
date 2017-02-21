@@ -40,6 +40,21 @@ struct TextureInfo {
 
   std::mutex load_mutex;
   bool is_loaded_to_memory = false;
+
+  TextureInfo() = default;
+  TextureInfo(TextureInfo&& other)
+    : elevation(std::move(other.elevation))
+    , diffuse(std::move(other.diffuse))
+    , min(other.min)
+    , max(other.max)
+    , min_h(other.min_h)
+    , max_h(other.max_h)
+    , min_max_src(other.min_max_src)
+    , elevation_data(std::move(other.elevation_data))
+    , diffuse_data(std::move(other.diffuse_data))
+    , is_loaded_to_gpu(other.is_loaded_to_gpu)
+    , is_loaded_to_memory (other.is_loaded_to_memory)
+  {}
 };
 
 struct StreamedTextureInfo {

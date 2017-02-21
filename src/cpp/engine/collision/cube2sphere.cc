@@ -25,6 +25,8 @@ static glm::dvec3 FaceLocalToUnitCube(const glm::dvec3& pos,
     case CubeFace::kNegY: return {+n.z, +n.y, +n.x}; break;
     case CubeFace::kPosZ: return {-n.x, -n.z, +n.y}; break;
     case CubeFace::kNegZ: return {+n.x, -n.z, -n.y}; break;
+    default:
+      throw std::runtime_error("Invalid CubeFace enum");
   }
 }
 

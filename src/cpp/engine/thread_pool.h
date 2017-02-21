@@ -13,13 +13,17 @@
 #include <functional>
 #include <stdexcept>
 
+namespace std {
+
 template<>
-struct std::less<std::pair<int, std::function<void()>>> {
+struct less<std::pair<int, std::function<void()>>> {
   constexpr bool operator()(const std::pair<int, std::function<void()>>& lhs,
                             const std::pair<int, std::function<void()>>& rhs) {
     return lhs.first < rhs.first;
   }
 };
+
+}
 
 class ThreadPool {
 public:
