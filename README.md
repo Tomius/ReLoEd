@@ -3,6 +3,9 @@ Land of Earth Reloaded
 
 Land of Earth is a global spherical terrain renderer that is based on a 172800 * 86400 heightmap, and it works realtime. It is an "extension" of [Filip Strugar's CDLOD concept](http://www.vertexasylum.com/downloads/cdlod/cdlod_latest.pdf), with texture streaming of course. This is a rewritten version of my original [Land of Earth](https://github.com/Tomius/LoE) project, with better performance and visual quality. Unfortunately I couldn't upload the dataset required to run this code.
 
+
+![screenshot](screenshots/screenshot.png)
+
 [![video](screenshots/video.png)](https://youtu.be/n4WSMzjVrB8)
 
 
