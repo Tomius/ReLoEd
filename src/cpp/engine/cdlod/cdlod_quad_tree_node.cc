@@ -51,12 +51,14 @@ void CdlodQuadTreeNode::selectNodes(const glm::vec3& cam_pos,
                                     ThreadPool& thread_pool) {
   last_used_ = 0;
 
-  StreamedTextureInfo texinfo;
-  selectTexture(cam_pos, frustum, thread_pool, texinfo);
+  bool is_node_visible = bbox_.collidesWithFrustum(frustum);
 
-  // textures should be loaded, even if it is outside the frustum (otherwise the
-  // texture lod difference of neighbour nodes can cause geometry cracks)
-  // if (!bbox_.collidesWithFrustum(frustum)) { return; }
+  StreamedTextureInfo texinfo;
+  selectTexture(cam_pos, frustum, thread_pool, texinfo, is_node_visible);
+
+  if (!is_node_visible) {
+    return;
+  }
 
   // If we can cover the whole area or if we are a leaf
   Sphere sphere{cam_pos, Settings::kSmallestGeometryLodDistance * scale()};
@@ -92,6 +94,7 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
                                       const Frustum& frustum,
                                       ThreadPool& thread_pool,
                                       StreamedTextureInfo& texinfo,
+                                      bool is_node_visible,
                                       int recursion_level /*= 0*/) {
   bool need_geometry = (texinfo.geometry_current == nullptr);
   bool need_normal   = (texinfo.normal_current == nullptr);
@@ -160,12 +163,19 @@ void CdlodQuadTreeNode::selectTexture(const glm::vec3& cam_pos,
     } else {
       // this one should be used, but not yet loaded -> start async load, but
       // make do with the parent for now.
-      thread_pool.enqueue(level_, [this](){ loadTexture(false); });
+      is_enqued_for_async_load_ = true;
+      int priority = level_ + (is_node_visible ? 0 : 2);
+      thread_pool.enqueue(priority, [this](){
+        loadTexture(false);
+        is_enqued_for_async_load_ = false;
+      });
     }
   }
 
-  parent_->selectTexture(cam_pos, frustum, thread_pool,
-                         texinfo, recursion_level+1);
+  if (is_node_visible) {
+    parent_->selectTexture(cam_pos, frustum, thread_pool,
+                           texinfo, is_node_visible, recursion_level+1);
+  }
 }
 
 void CdlodQuadTreeNode::age() {
@@ -174,7 +184,7 @@ void CdlodQuadTreeNode::age() {
   for (auto& child : children_) {
     if (child) {
       // unload child if its age would exceed the ttl
-      if (child->last_used_ > kTimeToLiveInMemory) {
+      if (child->last_used_ > kTimeToLiveInMemory && !child->is_enqued_for_async_load_) {
         child.reset();
       } else {
         child->age();

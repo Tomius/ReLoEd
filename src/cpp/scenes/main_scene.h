@@ -55,7 +55,7 @@ class MainScene : public engine::Scene {
           tp_camera_ = addComponent<engine::ThirdPersonalCamera>(
               M_PI/3, 2, 3*radius, pos,
               5, 1, 0.005, 4, radius, radius);
-          removeComponent(free_fly_camera_);
+          //removeComponent(free_fly_camera_);
           free_fly_camera_ = nullptr;
           set_camera(tp_camera_);
         } else {
@@ -64,7 +64,7 @@ class MainScene : public engine::Scene {
           glm::vec3 up{glm::normalize(free_fly_camera_->transform()->pos())};
           free_fly_camera_->transform()->set_forward(-up + glm::vec3{0, 0.25, 0});
           free_fly_camera_->transform()->set_up(up);
-          removeComponent(tp_camera_);
+          //removeComponent(tp_camera_);
           tp_camera_ = nullptr;
           set_camera(free_fly_camera_);
         }

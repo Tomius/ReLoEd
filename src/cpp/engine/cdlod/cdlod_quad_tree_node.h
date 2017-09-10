@@ -30,6 +30,7 @@ class CdlodQuadTreeNode {
                      const Frustum& frustum,
                      ThreadPool& thread_pool,
                      StreamedTextureInfo& texinfo,
+                     bool is_node_visible,
                      int recursion_level = 0);
 
  private:
@@ -40,6 +41,7 @@ class CdlodQuadTreeNode {
   CdlodQuadTreeNode* parent_;
   std::unique_ptr<CdlodQuadTreeNode> children_[4];
   int last_used_ = 0;
+  bool is_enqued_for_async_load_ = false;
 
   TextureInfo texture_;
 

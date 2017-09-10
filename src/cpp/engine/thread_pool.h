@@ -39,7 +39,7 @@ private:
 
     // synchronization
     std::mutex queue_mutex;
-    std::condition_variable condition;
+    std::condition_variable task_to_do;
     bool stop;
 };
 
@@ -52,10 +52,10 @@ inline ThreadPool::ThreadPool(size_t threads) : stop(false) {
 
         {
             std::unique_lock<std::mutex> lock(this->queue_mutex);
-            this->condition.wait(lock,
-                [this]{ return this->stop || !this->tasks.empty(); });
-            if (this->stop && this->tasks.empty())
-                return;
+            this->task_to_do.wait(lock, [&] { return this->stop || !this->tasks.empty(); });
+            if (this->stop) {
+              return;
+            }
             task = std::move(this->tasks.top().second);
             this->tasks.pop();
         }
@@ -78,7 +78,7 @@ inline void ThreadPool::enqueue(int priority, const std::function<void()>& task)
 
     tasks.push(std::make_pair(priority, task));
   }
-  condition.notify_one();
+  task_to_do.notify_one();
 }
 
 inline void ThreadPool::clear() {
@@ -94,7 +94,7 @@ inline ThreadPool::~ThreadPool() {
     std::unique_lock<std::mutex> lock(queue_mutex);
     stop = true;
   }
-  condition.notify_all();
+  task_to_do.notify_all();
   for (std::thread &worker: workers) {
     worker.join();
   }
