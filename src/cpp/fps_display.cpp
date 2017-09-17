@@ -26,11 +26,11 @@ FpsDisplay::FpsDisplay(Silice3D::GameObject* parent)
   triangle_per_sec_->set_horizontal_alignment(Silice3D::HorizontalAlignment::kRight);
 
   texture_nodes_ = AddComponent<Silice3D::Label>(
-             "Texture nodes:", glm::vec2{0.98f, 0.155f} * window_size, 1.5f, glm::vec4(1));
+             "Texture nodes:", glm::vec2{0.98f, 0.17f} * window_size, 1.5f, glm::vec4(1));
   texture_nodes_->set_horizontal_alignment(Silice3D::HorizontalAlignment::kRight);
 
   memory_usage_ = AddComponent<Silice3D::Label>(
-             "GPU memory usage:", glm::vec2{0.98f, 0.18f} * window_size, 1.5f, glm::vec4(1));
+             "GPU memory usage:", glm::vec2{0.98f, 0.195f} * window_size, 1.5f, glm::vec4(1));
   memory_usage_->set_horizontal_alignment(Silice3D::HorizontalAlignment::kRight);
 }
 
