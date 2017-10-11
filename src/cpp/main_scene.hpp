@@ -15,7 +15,7 @@ class MainScene : public Silice3D::Scene {
  public:
   MainScene(Silice3D::GameEngine* engine, GLFWwindow* window)
       : Scene(engine, window) {
-    #if !ENGINE_NO_FULLSCREEN
+    #if !SILICE3D_NO_FULLSCREEN
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     #endif
 

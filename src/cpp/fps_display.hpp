@@ -23,6 +23,7 @@ class FpsDisplay : public Silice3D::GameObject {
   double sum_time_ = -0.1, sum_calls_ = 0, accum_time_ = 0, accum_calls_ = 0;
 
   virtual void Update() override;
+  virtual void ScreenResized(size_t width, size_t height) override;
 };
 
 #endif

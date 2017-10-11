@@ -7,30 +7,28 @@
 
 FpsDisplay::FpsDisplay(Silice3D::GameObject* parent)
     : Silice3D::GameObject(parent) {
-  glm::vec2 window_size = scene()->engine()->window_size();
-
   fps_ = AddComponent<Silice3D::Label>(
-           "FPS:", glm::vec2{0.98f, 0.04f} * window_size, 1.8f, glm::vec4(1));
+           "FPS:", glm::vec2{0.98f, 0.04f}, 1.8f, glm::vec4(1));
   fps_->set_horizontal_alignment(Silice3D::HorizontalAlignment::kRight);
 
   geom_nodes_ = AddComponent<Silice3D::Label>(
-             "Geometry nodes:", glm::vec2{0.98f, 0.08f} * window_size, 1.5f, glm::vec4(1));
+             "Geometry nodes:", glm::vec2{0.98f, 0.08f}, 1.5f, glm::vec4(1));
   geom_nodes_->set_horizontal_alignment(Silice3D::HorizontalAlignment::kRight);
 
   triangle_count_ = AddComponent<Silice3D::Label>(
-             "Triangles count:", glm::vec2{0.98f, 0.105f} * window_size, 1.5f, glm::vec4(1));
+             "Triangles count:", glm::vec2{0.98f, 0.105f}, 1.5f, glm::vec4(1));
   triangle_count_->set_horizontal_alignment(Silice3D::HorizontalAlignment::kRight);
 
   triangle_per_sec_ = AddComponent<Silice3D::Label>(
-             "Triangles per sec:", glm::vec2{0.98f, 0.13f} * window_size, 1.5f, glm::vec4(1));
+             "Triangles per sec:", glm::vec2{0.98f, 0.13f}, 1.5f, glm::vec4(1));
   triangle_per_sec_->set_horizontal_alignment(Silice3D::HorizontalAlignment::kRight);
 
   texture_nodes_ = AddComponent<Silice3D::Label>(
-             "Texture nodes:", glm::vec2{0.98f, 0.17f} * window_size, 1.5f, glm::vec4(1));
+             "Texture nodes:", glm::vec2{0.98f, 0.17f}, 1.5f, glm::vec4(1));
   texture_nodes_->set_horizontal_alignment(Silice3D::HorizontalAlignment::kRight);
 
   memory_usage_ = AddComponent<Silice3D::Label>(
-             "GPU memory usage:", glm::vec2{0.98f, 0.195f} * window_size, 1.5f, glm::vec4(1));
+             "GPU memory usage:", glm::vec2{0.98f, 0.195f}, 1.5f, glm::vec4(1));
   memory_usage_->set_horizontal_alignment(Silice3D::HorizontalAlignment::kRight);
 }
 
@@ -98,5 +96,15 @@ void FpsDisplay::Update() {
 
     accum_time_ = accum_calls_ = 0;
   }
+}
+
+void FpsDisplay::ScreenResized(size_t /*width*/, size_t height) {
+  float scale = 0.5 + (height / 1080.0);
+  fps_->set_scale(scale);
+  geom_nodes_->set_scale(scale);
+  triangle_count_->set_scale(scale);
+  triangle_per_sec_->set_scale(scale);
+  texture_nodes_->set_scale(scale);
+  memory_usage_->set_scale(scale);
 }
 
