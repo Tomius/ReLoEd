@@ -24,10 +24,10 @@ CdlodQuadTreeNode::~CdlodQuadTreeNode() {
   if (texture_.is_loaded_to_gpu) {
     CdlodTerrainSettings::texture_nodes_count--;
     if (texture_.elevation.size != 0) {
-      gl(MakeTextureHandleNonResidentARB(texture_.elevation.id));
+      texture_.elevation.handle.makeNonResident();
     }
     if (texture_.diffuse.size != 0) {
-      gl(MakeTextureHandleNonResidentARB(texture_.diffuse.id));
+      texture_.diffuse.handle.makeNonResident();
     }
   }
 }
@@ -323,9 +323,8 @@ void CdlodQuadTreeNode::upload() {
       texture_.elevation.handle.wrapS(gl::kClampToEdge);
       texture_.elevation.handle.wrapT(gl::kClampToEdge);
 
-      texture_.elevation.id =
-          gl(GetTextureHandleARB(texture_.elevation.handle.expose()));
-      gl(MakeTextureHandleResidentARB(texture_.elevation.id));
+      texture_.elevation.handle.makeBindless();
+      texture_.elevation.handle.makeResident();
       gl::Unbind(texture_.elevation.handle);
 
       double scale = static_cast<double>(CdlodTerrainSettings::kElevationTexSizeWithBorders)
@@ -351,10 +350,8 @@ void CdlodQuadTreeNode::upload() {
       texture_.diffuse.handle.wrapS(gl::kClampToEdge);
       texture_.diffuse.handle.wrapT(gl::kClampToEdge);
 
-      texture_.diffuse.id =
-          gl(GetTextureHandleARB(texture_.diffuse.handle.expose()));
-      gl(MakeTextureHandleResidentARB(texture_.diffuse.id));
-      gl::Unbind(texture_.diffuse.handle);
+      texture_.diffuse.handle.makeBindless();
+      texture_.diffuse.handle.makeResident();
 
       double scale = static_cast<double>(CdlodTerrainSettings::kDiffuseTexSizeWithBorders)
                    / static_cast<double>(CdlodTerrainSettings::kTextureDimension);

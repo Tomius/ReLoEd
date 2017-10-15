@@ -122,12 +122,12 @@ void GridMesh::addToRenderList(const glm::vec4& render_data,
                                const StreamedTextureInfo& texinfo) {
   render_data_.push_back(render_data);
 
-  texture_ids_.push_back(texinfo.geometry_current->id);
-  texture_ids_.push_back(texinfo.geometry_next->id);
-  texture_ids_.push_back(texinfo.normal_current->id);
-  texture_ids_.push_back(texinfo.normal_next->id);
-  texture_ids_.push_back(texinfo.diffuse_current->id);
-  texture_ids_.push_back(texinfo.diffuse_next->id);
+  texture_ids_.push_back(texinfo.geometry_current->handle.bindless_handle());
+  texture_ids_.push_back(texinfo.geometry_next->handle.bindless_handle());
+  texture_ids_.push_back(texinfo.normal_current->handle.bindless_handle());
+  texture_ids_.push_back(texinfo.normal_next->handle.bindless_handle());
+  texture_ids_.push_back(texinfo.diffuse_current->handle.bindless_handle());
+  texture_ids_.push_back(texinfo.diffuse_next->handle.bindless_handle());
 
   texture_pos_and_size_.push_back(glm::vec3{texinfo.geometry_current->position,
                                    texinfo.geometry_current->size});

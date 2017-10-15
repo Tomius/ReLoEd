@@ -17,7 +17,6 @@ struct RGBPixel {
 };
 
 struct TextureBaseInfo {
-  uint64_t id = 0;
   glm::dvec2 position {0.0, 0.0}; // top-left
   double size = 0;
 
